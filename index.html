@@ -166,7 +166,9 @@ textarea{width:100%;min-height:110px;font:500 .8rem var(--mono);color:var(--ink)
       <h2>How to run it</h2>
       <p><b>Sets:</b> tap a bubble when you finish a set. Tap a checked bubble to select it, then use − / + if you missed or beat the reps. Tap a selected bubble to uncheck it. Sets − / + under the target adds or drops a set. Everything saves as you go.</p>
       <p><b>Workout time:</b> Start workout at the top, or it starts itself when you check your first set. End it when you're done; you'll get a prompt once every set is checked.</p>
-      <p><b>Weight:</b> starts at last time's weight. When every set hits the top of the range, the card says Add weight.</p>
+      <p><b>Progression:</b> each set's target is last time's reps +1, up to the top of the range. Miss a set and it drops back to what you did. When every set hits the top, the weight goes up by that lift's jump and reps reset to the bottom. You can always change the weight box; jump sizes and the Smith bar weight are in Settings.</p>
+      <p><b>First time on a lift:</b> it starts at a suggested weight. If set 1 beats the top of the range by 2+, go up one jump; if you can't reach the bottom, drop one.</p>
+      <p><b>Smith lifts:</b> enter the plates on one side. The bar is added for you.</p>
       <p><b>Effort:</b> stop most sets 1–2 reps short of failure; take the last set of each exercise to failure.</p>
       <p><b>Rest:</b> tap Start after each set. The clock sets itself to 2:30 after the first big lifts and 1:30 on everything else; −15 / +15 to change it.</p>
       <p><b>Deload:</b> every 6–8 weeks, cut the sets in half for a week.</p>
@@ -175,7 +177,7 @@ textarea{width:100%;min-height:110px;font:500 .8rem var(--mono);color:var(--ink)
   <main id="progview" hidden></main>
 </div>
 <div class="modal" id="smodal" hidden role="dialog" aria-modal="true" aria-labelledby="stitle">
-  <div class="mbox"><div class="mhead"><h3 id="stitle">Settings</h3><button class="btn" data-act="closeSet">Close</button></div><div id="sbody"></div></div>
+  <div class="mbox" style="max-height:88vh;overflow-y:auto"><div class="mhead"><h3 id="stitle">Settings</h3><button class="btn" data-act="closeSet">Close</button></div><div id="sbody"></div></div>
 </div>
 <div class="modal" id="emodal" hidden role="dialog" aria-modal="true" aria-labelledby="etitle">
   <div class="mbox"><div class="mhead"><h3 id="etitle">Every set is done</h3></div><p class="small" id="ebody" style="margin:0"></p>
@@ -188,17 +190,17 @@ textarea{width:100%;min-height:110px;font:500 .8rem var(--mono);color:var(--ink)
 /* [key, name, hint, sets, A range, B range, big lift (2:30 rest), per side] */
 const PLAN={
   push:[
-    ["incline","Incline dumbbell press","",4,[6,8],[10,12],1],
+    ["incline","Incline machine press","",4,[6,8],[10,12],1],
     ["mchest","Machine chest press","Seat raised",3,[6,8],[10,12],1],
     ["pecfly","Pec fly machine","",3,[10,12],[12,15]],
-    ["latraise","Dumbbell lateral raise","",4,[12,15],[15,20]],
+    ["latraise","Dumbbell lateral raise","",5,[12,15],[15,20]],
     ["ohext","Overhead extension","",3,[8,10],[12,15]],
     ["pushdown","Cable pushdown","",3,[10,12],[12,15]],
     ["crunch","Cable crunch","",3,[10,12],[12,15]],
     ["chop","Cable woodchop","Sets per side",2,[12,12],[15,15],0,1]],
   pull:[
     ["pulldown","Wide-grip lat pulldown","",4,[6,8],[10,12],1],
-    ["row","Chest-supported row","Elbows tucked",4,[6,8],[10,12],1],
+    ["row","Chest-supported row","Dumbbells on incline bench · elbows tucked",4,[6,8],[10,12],1],
     ["revfly","Reverse fly","",3,[12,15],[15,20]],
     ["shrug","Shrug","",3,[8,10],[12,15]],
     ["trapraise","Prone Y raise","Chest on incline bench",2,[12,15],[15,20]],
@@ -210,15 +212,27 @@ const PLAN={
     ["squat","Smith squat","",4,[6,8],[10,12],1],
     ["backext","Weighted back extension","Weight = plate held, 0 if none",3,[10,12],[12,15]],
     ["thrust","Smith hip thrust","",4,[8,10],[12,15],1],
-    ["legcurl","Seated leg curl","",3,[10,12],[12,15]],
+    ["legcurl","Seated leg curl","",4,[10,12],[12,15]],
     ["legext","Leg extension","",3,[10,12],[12,15]],
     ["abduct","Hip abduction","",3,[12,15],[15,20]],
-    ["calf","Standing calf raise","",4,[8,12],[15,20]],
+    ["calf","Standing calf raise","Smith · 2-sec pause at the bottom",3,[8,12],[15,20]],
+    ["seatcalf","Seated calf raise","2-sec pause at the bottom",3,[10,15],[15,20]],
+    ["tib","Tib raise","Back on wall · weight = added load, 0 if none",2,[15,20],[20,25]],
     ["hlr","Hanging knee raise","Curl hips up · weight = added load",3,[10,12],[12,15]]]
 };
-const FORMS=new Set(["incline","latraise","crunch","chop","pulldown","row","trapraise","inccurl","hammer","finger","revwrist","backext","thrust","hlr"]);
+const FORMS=new Set(["latraise","crunch","chop","pulldown","row","trapraise","inccurl","hammer","finger","revwrist","backext","thrust","hlr"]);
 const DAYS=[["pushA","Push A","push","A"],["pullA","Pull A","pull","A"],["legsA","Legs A","legs","A"],["pushB","Push B","push","B"],["pullB","Pull B","pull","B"],["legsB","Legs B","legs","B"]];
 const ALL=Object.values(PLAN).flat(),EX=Object.fromEntries(ALL.map(e=>[e[0],e]));
+/* Smith machine lifts: enter plates per side; saved weight = 2 × plates + bar */
+const SMITH=new Set(["squat","thrust","calf"]);
+/* default weight jump (lb total; dumbbells = per dumbbell; Smith = total, split across sides) */
+const JUMP={incline:10,mchest:10,pecfly:10,latraise:5,ohext:5,pushdown:5,crunch:10,chop:5,pulldown:10,row:5,revfly:5,shrug:5,trapraise:5,inccurl:5,hammer:5,finger:5,revwrist:5,squat:10,backext:5,thrust:10,legcurl:10,legext:10,abduct:10,calf:10,seatcalf:10,tib:0,hlr:5};
+/* starting weights [A, B], used until that day type has data. Smith = per side; dumbbells = per dumbbell */
+const START={incline:[30,20],mchest:[50,40],pecfly:[60,50],latraise:[10,8],ohext:[20,15],pushdown:[25,20],crunch:[50,40],chop:[20,15],
+  pulldown:[80,65],row:[30,25],revfly:[40,30],shrug:[40,35],trapraise:[5,5],inccurl:[15,12],hammer:[20,15],finger:[25,20],revwrist:[10,8],
+  squat:[35,25],backext:[10,5],thrust:[45,35],legcurl:[60,50],legext:[60,50],abduct:[80,70],calf:[45,35],seatcalf:[50,35],tib:[0,0],hlr:[0,0]};
+const jumpOf=k=>meta.jump?.[k]??JUMP[k]??5;
+const barW=()=>meta.bar??20;
 
 const $=s=>document.querySelector(s);
 const ymd=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
@@ -230,7 +244,7 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",
 /* ---------- storage: this device, with backups ---------- */
 /* entry: {d date, v "A"/"B", w weight, r reps on weakest checked set, n note, s per-set reps (null = not done)} */
 const LS="ppl-log-v1";let logs={},meta={},workouts=[],day=null,cur={},sel=null,view="log",focusEx=null,storageOk=true;
-function load(){try{const v=JSON.parse(localStorage.getItem(LS)||"{}");logs=v.logs||{};meta=v.meta||{};workouts=v.workouts||[]}catch{storageOk=false}}
+function load(){try{const v=JSON.parse(localStorage.getItem(LS)||"{}");logs=v.logs||{};meta=v.meta||{};workouts=(v.workouts||[]).filter(w=>w.min>=10)}catch{storageOk=false}}
 function store(){try{localStorage.setItem(LS,JSON.stringify({logs,meta,workouts}))}catch{storageOk=false}}
 try{navigator.storage?.persist?.()}catch{}
 
@@ -248,23 +262,34 @@ function renderDays(){const nx=nextDay();$("#days").innerHTML=DAYS.map(([id,lbl]
 function refs(k,v){const t=today(),all=logs[k]||[],todayE=all.find(x=>x.d===t&&x.v===v),past=all.filter(x=>x!==todayE);
   return{todayE,ref:past.filter(x=>x.v===v).pop()||null,any:past[past.length-1]||null}}
 /* today's working state for one exercise */
+/* weight as shown in the box: per side for Smith lifts */
+const shownW=(k,x)=>SMITH.has(k)?(x.p??Math.max(0,(x.w-barW())/2)):x.w;
+/* next session's plan from the last same-day-type session: +1 rep per set that hit its target (up to the top);
+   missed sets drop back to what was done; once every set hits the top, weight goes up and reps reset to the bottom */
+function plan(e,v){const k=e[0],range=v==="A"?e[4]:e[5],[bot,top]=range,n=nBubbles(e),{ref}=refs(k,v);
+  if(!ref)return{w:START[k]?.[v==="A"?0:1]??"",t:Array(n).fill(bot),bump:0,start:true};
+  const s=ref.s||Array(n).fill(ref.r),tg=ref.tg||s,w=shownW(k,ref);
+  if(s.length>=n&&s.slice(0,n).every(r=>r!=null&&r>=top)&&jumpOf(k)>0){const j=SMITH.has(k)?jumpOf(k)/2:jumpOf(k);return{w:w+j,t:Array(n).fill(bot),bump:jumpOf(k)}}
+  const t=Array.from({length:n},(_,i)=>{const r=s[Math.min(i,s.length-1)],g=tg[Math.min(i,tg.length-1)]??bot;
+    if(r==null)return Math.min(top,Math.max(bot,g));return r>=g?Math.min(top,Math.max(bot,r+1)):r});
+  return{w,t,bump:0}}
 function getCur(e,v){const k=e[0];if(cur[k])return cur[k];
-  const{todayE,ref,any}=refs(k,v),top=(v==="A"?e[4]:e[5])[1];
-  if(todayE){const s=todayE.s||Array(nBubbles(e)).fill(todayE.r);return cur[k]={w:String(todayE.w),n:todayE.n||"",s:s.map((r,i)=>({r:r??(ref?.s?.[i]??top),done:r!=null}))}}
-  const src=ref||any;
-  return cur[k]={w:src?String(src.w):"",n:"",s:Array.from({length:nBubbles(e)},(_,i)=>({r:ref?.s?.[i]??top,done:false}))}}
+  const{todayE}=refs(k,v),P=plan(e,v);
+  if(todayE){const s=todayE.s||Array(nBubbles(e)).fill(todayE.r),tg=todayE.tg||P.t;return cur[k]={w:String(shownW(k,todayE)),n:todayE.n||"",bump:P.bump,start:P.start,tg,s:s.map((r,i)=>({r:r??(tg[i]??P.t[i]??P.t[P.t.length-1]),done:r!=null}))}}
+  return cur[k]={w:String(P.w),n:"",bump:P.bump,start:P.start,tg:P.t.slice(),s:P.t.map(r=>({r,done:false}))}}
 function persist(k){const v=vOf(),c=cur[k],t=today(),arr=(logs[k]||[]).filter(x=>!(x.d===t&&x.v===v));
   const d=c.s.filter(x=>x.done).map(x=>x.r);
-  if(d.length){arr.push({d:t,v,w:parseFloat(c.w)||0,r:Math.min(...d),n:c.n.trim().slice(0,140),s:c.s.map(x=>x.done?x.r:null)});arr.sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);meta.lastDay=day;meta.at=t}
+  if(d.length){const iw=parseFloat(c.w)||0,sm=SMITH.has(k),tg=c.s.map((x,i)=>c.tg?.[i]??c.tg?.[c.tg.length-1]??x.r);
+    const en={d:t,v,w:sm?iw*2+barW():iw,r:Math.min(...d),n:c.n.trim().slice(0,140),s:c.s.map(x=>x.done?x.r:null),tg};if(sm){en.p=iw;en.bar=barW()}arr.push(en);arr.sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);meta.lastDay=day;meta.at=t}
   logs[k]=arr.slice(-400);store()}
 
 function card(e,v){const[k,name,hint,sets,ra,rb,big,sided]=e,range=v==="A"?ra:rb,top=range[1];
   const{todayE,ref,any}=refs(k,v),c=getCur(e,v);
-  const up=ref&&topHit(ref,e,top),rr=range[0]===range[1]?`${range[0]}`:`${range[0]}–${range[1]}`;
+  const sm=SMITH.has(k),wt=x=>sm?`${shownW(k,x)}/side (${x.w} lb)`:`${x.w} lb`,up=c.bump>0,rr=range[0]===range[1]?`${range[0]}`:`${range[0]}–${range[1]}`;
   let last;
-  if(ref)last=`<span>Last ${v}:</span><span class="num">${ref.w} lb × ${fmtSets(ref,sided)}</span><span>${fmtDate(ref.d)}</span>${up?'<span class="pill up">Add weight</span>':""}`;
-  else if(any)last=`<span>Last (${any.v}):</span><span class="num">${any.w} lb × ${fmtSets(any,sided)}</span><span>${fmtDate(any.d)}</span><span class="pill first">First ${v} session</span>`;
-  else last=`<span class="pill first">No history yet</span>`;
+  if(ref)last=`<span>Last ${v}:</span><span class="num">${wt(ref)} × ${fmtSets(ref,sided)}</span><span>${fmtDate(ref.d)}</span>${up?`<span class="pill up">Weight up +${jumpOf(k)} lb</span>`:""}`;
+  else if(any)last=`<span>Last (${any.v}):</span><span class="num">${wt(any)} × ${fmtSets(any,sided)}</span><span>${fmtDate(any.d)}</span><span class="pill first">First ${v} session · starting weight</span>`;
+  else last=`<span class="pill first">No history yet · starting weight</span>`;
   const bubs=c.s.map((x,i)=>{const lab=sided?`${i%2?"R":"L"}${(i>>1)+1}`:`Set ${i+1}`,isSel=sel&&sel.k===k&&sel.i===i;
     return `<button class="bub ${x.done?"done":""} ${isSel?"sel":""}" data-bub="${k}" data-i="${i}" aria-pressed="${x.done}" aria-label="${lab}, ${x.r} reps${x.done?", done":""}"><span class="sl">${sided?lab:i+1}</span><span class="sr">${x.r}</span></button>`}).join("");
   const adj=sel&&sel.k===k&&c.s[sel.i]?`<div class="adj"><span class="al">${sided?`${sel.i%2?"Right":"Left"} ${(sel.i>>1)+1}`:`Set ${sel.i+1}`} reps</span><button data-adj="-1" aria-label="One less rep">−</button><span class="av">${c.s[sel.i].r}</span><button data-adj="1" aria-label="One more rep">+</button></div>`:"";
@@ -274,12 +299,12 @@ function card(e,v){const[k,name,hint,sets,ra,rb,big,sided]=e,range=v==="A"?ra:rb
     <div class="last">${last}</div>
     ${ref&&ref.n?`<div class="note">“${esc(ref.n)}”</div>`:""}
     <div class="wrow">
-      <label for="w-${k}">Weight (lb)<input id="w-${k}" data-f="w" data-k="${k}" type="number" inputmode="decimal" step="0.5" min="0" value="${esc(c.w)}" placeholder="0"></label>
+      <label for="w-${k}">${sm?`Per side (lb)`:`Weight (lb)`}<input id="w-${k}" data-f="w" data-k="${k}" type="number" inputmode="decimal" step="0.5" min="0" value="${esc(c.w)}" placeholder="0"></label>
       <label for="n-${k}">Note<input class="txt" id="n-${k}" data-f="n" data-k="${k}" type="text" maxlength="140" value="${esc(c.n)}" placeholder="Seat, grip, feel"></label>
     </div>
     <div class="sets">${bubs}</div>
     ${adj}
-    ${hist.length?`<details class="hist"><summary>History (${(logs[k]||[]).length})</summary>${hist.map(h=>`<div class="hrow"><span class="d">${fmtDate(h.d)}</span><span class="v">${h.v}</span><span class="m">${h.w} lb × ${fmtSets(h,sided)}${h.n?` · ${esc(h.n)}`:""}</span></div>`).join("")}</details>`:""}
+    ${hist.length?`<details class="hist"><summary>History (${(logs[k]||[]).length})</summary>${hist.map(h=>`<div class="hrow"><span class="d">${fmtDate(h.d)}</span><span class="v">${h.v}</span><span class="m">${wt(h)} × ${fmtSets(h,sided)}${h.n?` · ${esc(h.n)}`:""}</span></div>`).join("")}</details>`:""}
   </article>`}
 
 function renderLog(){const D=DAYS.find(d=>d[0]===day),[,lbl,type,v]=D;
@@ -293,11 +318,11 @@ function renderLog(){const D=DAYS.find(d=>d[0]===day),[,lbl,type,v]=D;
 /* workouts: {d date, day, start ISO, end ISO, min} ; meta.ws = active {t start ms, day, asked} */
 let wIv=null;
 const hm=ms=>{const m=Math.floor(ms/60000);return m>=60?`${Math.floor(m/60)}:${String(m%60).padStart(2,"0")}`:`${m} min`};
-function avgMin(id){const W=workouts.filter(w=>w.day===id&&w.min>0);return W.length?Math.round(W.reduce((a,w)=>a+w.min,0)/W.length):null}
+function avgMin(id){const W=workouts.filter(w=>w.day===id&&w.min>=10);return W.length?Math.round(W.reduce((a,w)=>a+w.min,0)/W.length):null}
 function wStart(){if(meta.ws)return;meta.ws={t:Date.now(),day,asked:false};store();wDraw()}
 function wEnd(){const ws=meta.ws;if(!ws)return;const end=Date.now(),min=Math.max(1,Math.round((end-ws.t)/60000));
-  workouts.push({d:ymd(new Date(ws.t)),day:ws.day,start:new Date(ws.t).toISOString(),end:new Date(end).toISOString(),min});workouts=workouts.slice(-500);
-  meta.ws=null;store();$("#emodal").hidden=true;wDraw();if(view==="log")renderLog();$("#status").textContent=`Workout saved: ${min} min.`}
+  if(min>=10)workouts.push({d:ymd(new Date(ws.t)),day:ws.day,start:new Date(ws.t).toISOString(),end:new Date(end).toISOString(),min});workouts=workouts.slice(-500);
+  meta.ws=null;store();$("#emodal").hidden=true;wDraw();if(view==="log")renderLog();$("#status").textContent=min>=10?`Workout saved: ${min} min.`:"Workout under 10 minutes, not saved."}
 function wDraw(){const ws=meta.ws,bar=$("#wbar");bar.classList.toggle("on",!!ws);$("#wgo").textContent=ws?"End workout":"Start workout";
   clearInterval(wIv);
   if(!ws){$("#winfo").textContent="";return}
@@ -311,7 +336,10 @@ function renderSettings(){const avg=DAYS.map(([id,lbl])=>{const a=avgMin(id),n=w
   $("#sbody").innerHTML=`<div class="srow"><label for="sclock" style="font:500 1rem var(--body);text-transform:none;letter-spacing:0;color:var(--ink)">Show workout clock</label><input type="checkbox" id="sclock" ${meta.showClock?"checked":""}></div>
   <div class="srow"><span>Data file</span><button class="btn pri" data-act="download">Download data</button></div>
   <p class="small" id="dlmsg" role="status" style="margin:0"></p>
-  <div class="srow" style="display:block"><div style="font-weight:600;margin-bottom:4px">Average workout time</div>${avg}</div>`}
+  <div class="srow"><label for="sbar" style="font:500 1rem var(--body);text-transform:none;letter-spacing:0;color:var(--ink)">Smith bar weight (lb)</label><input id="sbar" type="number" inputmode="decimal" min="0" step="0.5" value="${barW()}" style="width:90px"></div>
+  <div class="srow" style="display:block"><div style="font-weight:600;margin-bottom:4px">Average workout time</div>${avg}</div>
+  <details class="srow" style="display:block"><summary style="font-weight:600;cursor:pointer">Weight jumps (lb)</summary><p class="small" style="margin:6px 0">How much the weight goes up once every set hits the top of the range. Dumbbells are per dumbbell; Smith lifts are the total, split across both sides.</p>
+  ${ALL.map(e=>`<div class="avgrow" style="align-items:center"><span>${esc(e[1])}</span><input data-jump="${e[0]}" type="number" inputmode="decimal" min="0" step="2.5" value="${jumpOf(e[0])}" style="width:80px;min-height:36px;padding:4px 8px"></div>`).join("")}</details>`}
 function download(){const txt=dump(),name=`liftlog-${today()}.json`,blob=new Blob([txt],{type:"application/json"});
   try{const a=document.createElement("a"),u=URL.createObjectURL(blob);a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);
     meta.backup=today();store();const m=$("#dlmsg");if(m)m.textContent=`Saved ${name} to Downloads.`}
@@ -370,7 +398,8 @@ function bigChart(k){const S=sessions(k);if(S.length<2)return `<p class="small">
 function dump(){return JSON.stringify({app:"ppl-log",v:2,exported:new Date().toISOString(),lastDay:meta.lastDay||null,
   note:"Each entry: d date, v day type, w weight lb, r reps on weakest set, s reps per set (null = not done; woodchop alternates L,R), n note",
   workoutsNote:"Each workout: d date, day, start/end ISO times, min duration",
-  plan:Object.fromEntries(ALL.map(e=>[e[0],{name:e[1],sets:e[3],A:e[4],B:e[5],perSide:!!e[7]}])),logs,workouts})}
+  smithNote:"Smith lifts: w = total incl. bar, p = plates per side, bar = bar weight. tg = rep targets per set",
+  plan:Object.fromEntries(ALL.map(e=>[e[0],{name:e[1],sets:e[3],A:e[4],B:e[5],perSide:!!e[7],jump:jumpOf(e[0]),smith:SMITH.has(e[0])}])),logs,workouts})}
 function renderProg(){const dates=new Set(Object.values(logs).flat().map(x=>x.d));
   const cut=ymd(new Date(Date.now()-28*864e5)),recentDays=[...dates].filter(d=>d>cut).length,lastD=[...dates].sort().pop();
   const st=ALL.map(e=>({e,s:status(e[0])})),flags=st.filter(x=>x.s.c==="stall"||x.s.c==="drop");
@@ -424,7 +453,9 @@ document.addEventListener("click",async e=>{
   if(a==="showRestore")$("#restore").hidden=false;
   if(a==="restore"){try{const d=JSON.parse($("#restorebox").value);if(!d||typeof d.logs!=="object")throw 0;logs=d.logs;if(Array.isArray(d.workouts))workouts=d.workouts;if(d.lastDay)meta.lastDay=d.lastDay;store();cur={};sel=null;view="log";render();$("#status").textContent="Backup restored."}catch{$("#restorebox").value="";$("#restorebox").placeholder="That isn't a backup from this app. Paste the full text from Copy data."}}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){$("#modal").hidden=true;$("#smodal").hidden=true}if(e.key==="Enter"&&e.target.dataset?.k){e.preventDefault();e.target.blur()}if((e.key==="Enter"||e.key===" ")&&e.target.dataset?.ex){e.preventDefault();e.target.click()}});
-document.addEventListener("change",e=>{if(e.target.id==="sclock"){meta.showClock=e.target.checked;store();wDraw()}});
+document.addEventListener("change",e=>{const t=e.target;if(t.id==="sclock"){meta.showClock=t.checked;store();wDraw()}
+  if(t.id==="sbar"){const b=parseFloat(t.value);if(b>=0){meta.bar=b;store();cur={};if(view==="log")renderLog()}}
+  if(t.dataset?.jump){const j=parseFloat(t.value);if(j>=0){meta.jump=meta.jump||{};meta.jump[t.dataset.jump]=j;store();cur={};if(view==="log")renderLog()}}});
 document.addEventListener("input",e=>{const el=e.target,k=el.dataset.k;if(!k||!cur[k])return;cur[k][el.dataset.f]=el.value;
   if(cur[k].s.some(x=>x.done))persist(k)});
 
