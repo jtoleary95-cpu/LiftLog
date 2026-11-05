@@ -141,6 +141,22 @@ svg.spark{width:64px;height:28px;display:block}.chart{width:100%;height:auto;dis
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.8rem;color:var(--soft)}.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}
 textarea{width:100%;min-height:110px;font:500 .8rem var(--mono);color:var(--ink);background:var(--field);border:1.5px solid var(--line);border-radius:7px;padding:8px}
 .flag{font-size:.9rem;margin:4px 0}.flag b{font-weight:600}.small{font-size:.85rem;color:var(--soft)}
+/* recommendation, card rest timer, minimized card */
+.exname .rec{display:block;font:600 .85rem var(--mono);color:var(--accent);letter-spacing:0;margin-top:3px;font-variant-numeric:tabular-nums}
+.rec .rw{font:600 .72rem var(--body);letter-spacing:.05em;text-transform:uppercase;border-radius:4px;padding:1px 6px;margin-left:4px;white-space:nowrap}
+.rec .rw.up{background:var(--go-bg);color:var(--go)}.rec .rw.stall{background:var(--warnbg);color:var(--warn)}.rec .rw.drop{background:var(--badbg);color:var(--bad)}
+.ctimer{display:flex;align-items:center;gap:6px;background:var(--field);border:1.5px solid var(--accent);border-radius:8px;padding:4px 4px 4px 10px}
+.ctimer .cl{font:600 .7rem var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--soft)}
+.ctimer .cv{font:600 1.35rem/1 var(--mono);color:var(--accent);font-variant-numeric:tabular-nums;flex:1}
+.ctimer button{font:600 .85rem var(--mono);background:var(--card);color:var(--ink);border:1.5px solid var(--line);border-radius:7px;min-width:44px;min-height:38px;cursor:pointer;padding:0 8px}
+.ctimer.end{border-color:var(--go);background:var(--go-bg)}.ctimer.end .cv{color:var(--go)}
+.ex.mini{padding:0}
+.minirow{display:flex;align-items:center;gap:10px;width:100%;background:transparent;border:0;color:var(--ink);text-align:left;padding:10px 14px;min-height:48px;cursor:pointer}
+.minirow .mt{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.minirow .mn{font:700 1.05rem/1.15 var(--display)}
+.minirow .ms{font:500 .85rem var(--mono);color:var(--soft);font-variant-numeric:tabular-nums}
+.minirow .mk{color:var(--go);font-weight:700}
+.bub .sl.wv{font:600 .62rem var(--mono);letter-spacing:0;text-transform:none}
 @media (prefers-reduced-motion:no-preference){.bub{transition:background .12s,border-color .12s}}
 </style>
 </head>
@@ -165,12 +181,13 @@ textarea{width:100%;min-height:110px;font:500 .8rem var(--mono);color:var(--ink)
     <section class="rules">
       <h2>How to run it</h2>
       <p><b>Sets:</b> tap a bubble when you finish a set. Tap a checked bubble to select it, then use − / + if you missed or beat the reps. Tap a selected bubble to uncheck it. Sets − / + under the target adds or drops a set. Everything saves as you go.</p>
+      <p><b>Weight per set:</b> the weight box sets the weight for the sets you haven't done yet, so change it before a set if you go up or down. To fix a set you already did, tap its bubble, then change the box. When weights differ, each bubble shows its weight. Progression goes off your heaviest set.</p>
       <p><b>Workout time:</b> Start workout at the top, or it starts itself when you check your first set. End it when you're done; you'll get a prompt once every set is checked.</p>
       <p><b>Progression:</b> each set's target is last time's reps +1, up to the top of the range. Miss a set and it drops back to what you did. When every set hits the top, the weight goes up by that lift's jump and reps reset to the bottom. You can always change the weight box; jump sizes and the Smith bar weight are in Settings.</p>
       <p><b>First time on a lift:</b> it starts at a suggested weight. If set 1 beats the top of the range by 2+, go up one jump; if you can't reach the bottom, drop one.</p>
       <p><b>Smith lifts:</b> enter the plates on one side. The bar is added for you.</p>
       <p><b>Effort:</b> stop most sets 1–2 reps short of failure; take the last set of each exercise to failure.</p>
-      <p><b>Rest:</b> tap Start after each set. The clock sets itself to 2:30 after the first big lifts and 1:30 on everything else; −15 / +15 to change it.</p>
+      <p><b>Rest:</b> a rest timer starts on the card when you check a set, except the last set of an exercise: 2:30 on the big lifts, 1:30 on everything else; −15 / +15 to change it. Checking the last set minimizes the exercise; tap it to open it again. The clock at the top still works by hand.</p>
       <p><b>Deload:</b> every 6–8 weeks, cut the sets in half for a week.</p>
     </section>
   </main>
@@ -243,7 +260,7 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",
 
 /* ---------- storage: this device, with backups ---------- */
 /* entry: {d date, v "A"/"B", w weight, r reps on weakest checked set, n note, s per-set reps (null = not done)} */
-const LS="ppl-log-v1";let logs={},meta={},workouts=[],day=null,cur={},sel=null,view="log",focusEx=null,storageOk=true;
+const LS="ppl-log-v1";let logs={},meta={},workouts=[],day=null,cur={},sel=null,openEx=new Set(),view="log",focusEx=null,storageOk=true;
 function load(){try{const v=JSON.parse(localStorage.getItem(LS)||"{}");logs=v.logs||{};meta=v.meta||{};workouts=(v.workouts||[]).filter(w=>w.min>=10)}catch{storageOk=false}}
 function store(){try{localStorage.setItem(LS,JSON.stringify({logs,meta,workouts}))}catch{storageOk=false}}
 try{navigator.storage?.persist?.()}catch{}
@@ -251,9 +268,11 @@ try{navigator.storage?.persist?.()}catch{}
 const vOf=()=>DAYS.find(d=>d[0]===day)[3];
 const nBubbles=e=>e[3]*(e[7]?2:1);
 const doneReps=x=>x.s?x.s.filter(n=>n!=null):[x.r];
-function fmtSets(x,sided){if(!x.s)return String(x.r);
-  if(sided){const out=[];for(let i=0;i<x.s.length;i+=2){const l=x.s[i],r=x.s[i+1];if(l==null&&r==null)continue;out.push(`L${l??"–"} R${r??"–"}`)}return out.join(", ")}
-  return doneReps(x).join(", ")}
+/* per-set weights (as entered, per side on Smith lifts); heaviest one is the set's working weight */
+const topW=x=>{const w=(x.ws||[]).filter((n,i)=>n!=null&&x.s?.[i]!=null);return w.length?Math.max(...w):null};
+function fmtSets(x,sided){if(!x.s)return String(x.r);const t=topW(x),at=i=>x.ws&&x.ws[i]!=null&&t!=null&&x.ws[i]!==t?`@${x.ws[i]}`:"";
+  if(sided){const out=[];for(let i=0;i<x.s.length;i+=2){const l=x.s[i],r=x.s[i+1];if(l==null&&r==null)continue;out.push(`L${l??"–"} R${r??"–"}${at(i)}`)}return out.join(", ")}
+  return x.s.map((r,i)=>r==null?null:`${r}${at(i)}`).filter(Boolean).join(", ")}
 function topHit(x,e,top){const d=doneReps(x);return x.s?d.length>=nBubbles(e)&&d.every(n=>n>=top):x.r>=top}
 
 function nextDay(){const i=DAYS.findIndex(d=>d[0]===meta.lastDay);return DAYS[(i+1)%DAYS.length][0]}
@@ -268,41 +287,64 @@ const shownW=(k,x)=>SMITH.has(k)?(x.p??Math.max(0,(x.w-barW())/2)):x.w;
    missed sets drop back to what was done; once every set hits the top, weight goes up and reps reset to the bottom */
 function plan(e,v){const k=e[0],range=v==="A"?e[4]:e[5],[bot,top]=range,n=nBubbles(e),{ref}=refs(k,v);
   if(!ref)return{w:START[k]?.[v==="A"?0:1]??"",t:Array(n).fill(bot),bump:0,start:true};
-  const s=ref.s||Array(n).fill(ref.r),tg=ref.tg||s,w=shownW(k,ref);
-  if(s.length>=n&&s.slice(0,n).every(r=>r!=null&&r>=top)&&jumpOf(k)>0){const j=SMITH.has(k)?jumpOf(k)/2:jumpOf(k);return{w:w+j,t:Array(n).fill(bot),bump:jumpOf(k)}}
+  const s0=ref.s||Array(n).fill(ref.r),tg=ref.tg||s0,w=shownW(k,ref),tw=topW(ref);
+  /* sets done lighter than the heaviest one don't count as reps at the working weight */
+  const light=i=>tw!=null&&ref.ws?.[i]!=null&&ref.ws[i]<tw,s=s0.map((r,i)=>light(i)?null:r),mixed=s0.some((r,i)=>r!=null&&light(i));
+  if(!mixed&&s.length>=n&&s.slice(0,n).every(r=>r!=null&&r>=top)&&jumpOf(k)>0){const j=SMITH.has(k)?jumpOf(k)/2:jumpOf(k);return{w:w+j,t:Array(n).fill(bot),bump:jumpOf(k)}}
   const t=Array.from({length:n},(_,i)=>{const r=s[Math.min(i,s.length-1)],g=tg[Math.min(i,tg.length-1)]??bot;
     if(r==null)return Math.min(top,Math.max(bot,g));return r>=g?Math.min(top,Math.max(bot,r+1)):r});
   return{w,t,bump:0}}
 function getCur(e,v){const k=e[0];if(cur[k])return cur[k];
   const{todayE}=refs(k,v),P=plan(e,v);
-  if(todayE){const s=todayE.s||Array(nBubbles(e)).fill(todayE.r),tg=todayE.tg||P.t;return cur[k]={w:String(shownW(k,todayE)),n:todayE.n||"",bump:P.bump,start:P.start,tg,s:s.map((r,i)=>({r:r??(tg[i]??P.t[i]??P.t[P.t.length-1]),done:r!=null}))}}
-  return cur[k]={w:String(P.w),n:"",bump:P.bump,start:P.start,tg:P.t.slice(),s:P.t.map(r=>({r,done:false}))}}
+  const rec=recOf(e,v,P);
+  if(todayE){const s=todayE.s||Array(nBubbles(e)).fill(todayE.r),tg=todayE.tg||P.t,w0=String(shownW(k,todayE));
+    const nx=[...s].reverse().findIndex(r=>r!=null),lastW=todayE.ws&&nx>=0?todayE.ws[s.length-1-nx]:null,dw=lastW!=null?String(lastW):w0;
+    return cur[k]={w:dw,n:todayE.n||"",bump:P.bump,start:P.start,rec,tg,s:s.map((r,i)=>({r:r??(tg[i]??P.t[i]??P.t[P.t.length-1]),done:r!=null,w:r!=null&&todayE.ws?.[i]!=null?String(todayE.ws[i]):r!=null?w0:dw}))}}
+  return cur[k]={w:String(P.w),n:"",bump:P.bump,start:P.start,rec,tg:P.t.slice(),s:P.t.map(r=>({r,done:false,w:String(P.w)}))}}
+/* the line under the exercise name: today's suggested weight × reps, from last session and the stall check */
+function recOf(e,v,P){const k=e[0],sm=SMITH.has(k),sided=e[7],[bot,top]=v==="A"?e[4]:e[5];
+  const t=sided?P.t.filter((_,i)=>i%2===0):P.t,reps=t.join(", ");
+  const w=+P.w||0,wl=w>0?(sm?`${w}/side`:`${w} lb`):(jumpOf(k)>0?"0 lb":"Bodyweight");
+  const st=vstatus(k,v);
+  if(P.start)return{t:`Start ${wl} × ${bot}${sided?" each side":""}`,tag:"",cls:""};
+  if(P.bump)return{t:`${wl} × ${reps}${sided?" each side":""}`,tag:`Up ${jumpOf(k)} lb`,cls:"up"};
+  if(st&&st.c==="drop")return{t:`${wl} × ${reps}${sided?" each side":""}`,tag:"Dropping: ~10% off helps",cls:"drop"};
+  if(st&&st.c==="stall")return{t:`${wl} × ${reps}${sided?" each side":""}`,tag:`Stalled ${st.n}: beat 1 set`,cls:"stall"};
+  return{t:`${wl} × ${reps}${sided?" each side":""}`,tag:"",cls:""}}
 function persist(k){const v=vOf(),c=cur[k],t=today(),arr=(logs[k]||[]).filter(x=>!(x.d===t&&x.v===v));
   const d=c.s.filter(x=>x.done).map(x=>x.r);
-  if(d.length){const iw=parseFloat(c.w)||0,sm=SMITH.has(k),tg=c.s.map((x,i)=>c.tg?.[i]??c.tg?.[c.tg.length-1]??x.r);
-    const en={d:t,v,w:sm?iw*2+barW():iw,r:Math.min(...d),n:c.n.trim().slice(0,140),s:c.s.map(x=>x.done?x.r:null),tg};if(sm){en.p=iw;en.bar=barW()}arr.push(en);arr.sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);meta.lastDay=day;meta.at=t}
+  if(d.length){const sm=SMITH.has(k),tg=c.s.map((x,i)=>c.tg?.[i]??c.tg?.[c.tg.length-1]??x.r);
+    const ws=c.s.map(x=>x.done?(parseFloat(x.w)||0):null),iw=Math.max(...ws.filter(n=>n!=null)),atTop=c.s.filter((x,i)=>x.done&&ws[i]===iw).map(x=>x.r);
+    const en={d:t,v,w:sm?iw*2+barW():iw,r:Math.min(...atTop),n:c.n.trim().slice(0,140),s:c.s.map(x=>x.done?x.r:null),ws,tg};if(sm){en.p=iw;en.bar=barW()}arr.push(en);arr.sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);meta.lastDay=day;meta.at=t}
   logs[k]=arr.slice(-400);store()}
 
 function card(e,v){const[k,name,hint,sets,ra,rb,big,sided]=e,range=v==="A"?ra:rb,top=range[1];
-  const{todayE,ref,any}=refs(k,v),c=getCur(e,v);
+  const{todayE,ref,any}=refs(k,v),c=getCur(e,v),all0=c.s.length&&c.s.every(x=>x.done);
+  if(all0&&!openEx.has(k)&&todayE){const sm0=SMITH.has(k);
+    return `<article class="ex mini saved" data-k="${k}"><button class="minirow" data-open="${k}" aria-label="${esc(name)}, done. Tap to open"><span class="mt"><span class="mn">${name}</span><span class="ms">${sm0?`${shownW(k,todayE)}/side`:`${todayE.w} lb`} × ${fmtSets(todayE,sided)}</span></span><span class="mk" aria-hidden="true">✓</span></button></article>`}
   const sm=SMITH.has(k),wt=x=>sm?`${shownW(k,x)}/side (${x.w} lb)`:`${x.w} lb`,up=c.bump>0,rr=range[0]===range[1]?`${range[0]}`:`${range[0]}–${range[1]}`;
   let last;
-  if(ref)last=`<span>Last ${v}:</span><span class="num">${wt(ref)} × ${fmtSets(ref,sided)}</span><span>${fmtDate(ref.d)}</span>${up?`<span class="pill up">Weight up +${jumpOf(k)} lb</span>`:""}`;
-  else if(any)last=`<span>Last (${any.v}):</span><span class="num">${wt(any)} × ${fmtSets(any,sided)}</span><span>${fmtDate(any.d)}</span><span class="pill first">First ${v} session · starting weight</span>`;
-  else last=`<span class="pill first">No history yet · starting weight</span>`;
+  if(ref)last=`<span>Last ${v}:</span><span class="num">${wt(ref)} × ${fmtSets(ref,sided)}</span><span>${fmtDate(ref.d)}</span>`;
+  else if(any)last=`<span>Last (${any.v}):</span><span class="num">${wt(any)} × ${fmtSets(any,sided)}</span><span>${fmtDate(any.d)}</span><span class="pill first">First ${v} session</span>`;
+  else last=`<span class="pill first">No history yet</span>`;
+  const vary=new Set(c.s.map(x=>parseFloat(x.w)||0)).size>1;
   const bubs=c.s.map((x,i)=>{const lab=sided?`${i%2?"R":"L"}${(i>>1)+1}`:`Set ${i+1}`,isSel=sel&&sel.k===k&&sel.i===i;
-    return `<button class="bub ${x.done?"done":""} ${isSel?"sel":""}" data-bub="${k}" data-i="${i}" aria-pressed="${x.done}" aria-label="${lab}, ${x.r} reps${x.done?", done":""}"><span class="sl">${sided?lab:i+1}</span><span class="sr">${x.r}</span></button>`}).join("");
+    return `<button class="bub ${x.done?"done":""} ${isSel?"sel":""}" data-bub="${k}" data-i="${i}" aria-pressed="${x.done}" aria-label="${lab}, ${esc(x.w)} lb, ${x.r} reps${x.done?", done":""}">${vary?`<span class="sl wv">${esc(x.w)}</span>`:`<span class="sl">${sided?lab:i+1}</span>`}<span class="sr">${x.r}</span></button>`}).join("");
+  const wSel=sel&&sel.k===k&&sel.w&&c.s[sel.i],wVal=wSel?c.s[sel.i].w:c.w,wLab=wSel?`${sided?`${sel.i%2?"Right":"Left"} ${(sel.i>>1)+1}`:`Set ${sel.i+1}`}${sm?" per side":""} (lb)`:(sm?`Per side (lb)`:`Weight (lb)`);
+  const ct=CT.k===k?`<div class="ctimer ${CT.fin?"end":""}" id="ct-${k}" role="timer"><span class="cl">Rest</span><span class="cv">${mmss(ctLeft())}</span><button data-ct="-15" aria-label="Minus 15 seconds">−15</button><button data-ct="15" aria-label="Plus 15 seconds">+15</button><button data-ct="x">Skip</button></div>`:"";
+  const R=c.rec;
   const adj=sel&&sel.k===k&&c.s[sel.i]?`<div class="adj"><span class="al">${sided?`${sel.i%2?"Right":"Left"} ${(sel.i>>1)+1}`:`Set ${sel.i+1}`} reps</span><button data-adj="-1" aria-label="One less rep">−</button><span class="av">${c.s[sel.i].r}</span><button data-adj="1" aria-label="One more rep">+</button></div>`:"";
   const all=c.s.length&&c.s.every(x=>x.done),hist=(logs[k]||[]).slice(-8).reverse();
   return `<article class="ex ${all?"saved":""}" data-k="${k}">
-    <div class="exhead"><div class="exname">${name}${hint?`<small>${hint}</small>`:""}</div><div class="right"><div class="target">${sets} × ${rr}</div><div class="setctl"><span class="sl">Sets</span><button class="setbtn" data-dropset="${k}" aria-label="Remove last set" ${c.s.length>(sided?2:1)?"":"disabled"}>−</button><b>${sided?c.s.length/2:c.s.length}</b><button class="setbtn" data-addset="${k}" aria-label="Add a set">+</button></div>${FORMS.has(k)?`<button class="formbtn" data-form="${k}">Form</button>`:""}</div></div>
+    <div class="exhead"><div class="exname">${name}${R?`<span class="rec">${R.t}${R.tag?`<span class="rw ${R.cls}">${R.tag}</span>`:""}</span>`:""}${hint?`<small>${hint}</small>`:""}</div><div class="right"><div class="target">${sets} × ${rr}</div><div class="setctl"><span class="sl">Sets</span><button class="setbtn" data-dropset="${k}" aria-label="Remove last set" ${c.s.length>(sided?2:1)?"":"disabled"}>−</button><b>${sided?c.s.length/2:c.s.length}</b><button class="setbtn" data-addset="${k}" aria-label="Add a set">+</button></div>${FORMS.has(k)?`<button class="formbtn" data-form="${k}">Form</button>`:""}</div></div>
     <div class="last">${last}</div>
     ${ref&&ref.n?`<div class="note">“${esc(ref.n)}”</div>`:""}
     <div class="wrow">
-      <label for="w-${k}">${sm?`Per side (lb)`:`Weight (lb)`}<input id="w-${k}" data-f="w" data-k="${k}" type="number" inputmode="decimal" step="0.5" min="0" value="${esc(c.w)}" placeholder="0"></label>
+      <label for="w-${k}">${wLab}<input id="w-${k}" data-f="w" data-k="${k}" type="number" inputmode="decimal" step="0.5" min="0" value="${esc(wVal)}" placeholder="0"></label>
       <label for="n-${k}">Note<input class="txt" id="n-${k}" data-f="n" data-k="${k}" type="text" maxlength="140" value="${esc(c.n)}" placeholder="Seat, grip, feel"></label>
     </div>
     <div class="sets">${bubs}</div>
+    ${ct}
     ${adj}
     ${hist.length?`<details class="hist"><summary>History (${(logs[k]||[]).length})</summary>${hist.map(h=>`<div class="hrow"><span class="d">${fmtDate(h.d)}</span><span class="v">${h.v}</span><span class="m">${wt(h)} × ${fmtSets(h,sided)}${h.n?` · ${esc(h.n)}`:""}</span></div>`).join("")}</details>`:""}
   </article>`}
@@ -322,10 +364,10 @@ function avgMin(id){const W=workouts.filter(w=>w.day===id&&w.min>=10);return W.l
 function wStart(){if(meta.ws)return;meta.ws={t:Date.now(),day,asked:false};store();wDraw()}
 function wEnd(){const ws=meta.ws;if(!ws)return;const end=Date.now(),min=Math.max(1,Math.round((end-ws.t)/60000));
   if(min>=10)workouts.push({d:ymd(new Date(ws.t)),day:ws.day,start:new Date(ws.t).toISOString(),end:new Date(end).toISOString(),min});workouts=workouts.slice(-500);
-  meta.ws=null;store();$("#emodal").hidden=true;wDraw();if(view==="log")renderLog();$("#status").textContent=min>=10?`Workout saved: ${min} min.`:"Workout under 10 minutes, not saved."}
+  meta.ws=null;meta.lastW={d:today(),end,min};store();$("#emodal").hidden=true;wDraw();if(view==="log")renderLog();$("#status").textContent=min>=10?`Workout saved: ${min} min.`:"Workout under 10 minutes, not saved."}
 function wDraw(){const ws=meta.ws,bar=$("#wbar");bar.classList.toggle("on",!!ws);$("#wgo").textContent=ws?"End workout":"Start workout";
   clearInterval(wIv);
-  if(!ws){$("#winfo").textContent="";return}
+  if(!ws){const L=meta.lastW;$("#winfo").innerHTML=L&&L.d===today()?`Ended <b style="font-size:1rem">${new Date(L.end).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})}</b>· ${hm(L.min*60000)}`:"";return}
   const st=new Date(ws.t).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"});
   const tick=()=>{const el=Date.now()-ws.t,s=Math.floor(el/1000);$("#winfo").innerHTML=meta.showClock?`<b>${Math.floor(s/3600)?Math.floor(s/3600)+":":""}${String(Math.floor(s/60)%60).padStart(Math.floor(s/3600)?2:1,"0")}:${String(s%60).padStart(2,"0")}</b>since ${st}`:`Started ${st}`};
   tick();if(meta.showClock)wIv=setInterval(tick,1000)}
@@ -359,7 +401,17 @@ function tFinish(){tStop();try{navigator.vibrate?.([400,150,400,150,400])}catch{
   T.flash=setTimeout(()=>{$("#timer").classList.remove("end");tDraw()},4000)}
 function tAdj(d){if(T.end){T.end=Math.max(Date.now()+1000,T.end+d*1000)}else{T.def=Math.min(600,Math.max(15,T.def+d))}$("#timer").classList.remove("end");tDraw()}
 function tPreset(e){if(T.end)return;T.def=e[6]?150:90;tDraw()}
-document.addEventListener("visibilitychange",()=>{if(!document.hidden&&T.end)tDraw()});
+/* card rest timer: starts on its own when a set is checked (not the last one) */
+const CT={k:null,end:0,iv:null,fin:false,ft:null};
+const ctLeft=()=>CT.fin?0:Math.max(0,Math.ceil((CT.end-Date.now())/1000));
+function ctStart(k){clearTimeout(CT.ft);CT.k=k;CT.fin=false;CT.end=Date.now()+(EX[k][6]?150:90)*1000;clearInterval(CT.iv);CT.iv=setInterval(ctTick,250);
+  try{navigator.wakeLock?.request("screen").then(l=>{try{CT.wl?.release()}catch{}CT.wl=l}).catch(()=>{})}catch{}}
+function ctTick(){const el=document.getElementById("ct-"+CT.k),left=ctLeft();if(el)el.querySelector(".cv").textContent=mmss(left);
+  if(left<=0&&!CT.fin){clearInterval(CT.iv);CT.fin=true;try{navigator.vibrate?.([400,150,400,150,400])}catch{}beep();if(el)el.classList.add("end");
+    try{CT.wl?.release()}catch{}CT.wl=null;CT.ft=setTimeout(()=>{if(CT.fin){CT.k=null;CT.fin=false;if(view==="log")renderLog()}},4000)}}
+function ctStop(){clearInterval(CT.iv);clearTimeout(CT.ft);CT.k=null;CT.fin=false;try{CT.wl?.release()}catch{}CT.wl=null}
+function ctAdj(d){if(!CT.k||CT.fin)return;CT.end=Math.max(Date.now()+1000,CT.end+d*1000);ctTick()}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden){if(T.end)tDraw();if(CT.k)ctTick()}});
 
 /* ---------- form GIFs: packed in forms.html, loaded once ---------- */
 let formsP=null;
@@ -377,7 +429,7 @@ function sessions(k,v){const by={};for(const x of logs[k]||[]){if(v&&x.v!==v)con
 function vstatus(k,v){const S=sessions(k,v);if(S.length<4)return null;let run=-1,idx=0;S.forEach((x,i)=>{if(x.s>run*1.005){run=x.s;idx=i}else if(x.s>run)run=x.s});
   const since=S.length-1-idx,best=run,last2=S.slice(-2);
   if(last2.every(x=>x.s<best*0.95))return{c:"drop",t:"Dropping",why:`${v} days: last 2 sessions are over 5% under your best of ${Math.round(best)}`};
-  if(since>=3)return{c:"stall",t:"Stalled",why:`${v} days: no new best in ${since} sessions`};
+  if(since>=3)return{c:"stall",t:"Stalled",n:since,why:`${v} days: no new best in ${since} sessions`};
   return{c:"ok",t:"Progressing",why:`${v} days: new best within the last 3 sessions`}}
 function status(k){const r=["A","B"].map(v=>vstatus(k,v)).filter(Boolean);if(!r.length){const n=Math.max(sessions(k,"A").length,sessions(k,"B").length);return{c:"new",t:"Building data",why:`${n} of 4 sessions logged on an A or B day`}}
   const rank={drop:0,stall:1,ok:2};r.sort((a,b)=>rank[a.c]-rank[b.c]);return{...r[0],why:r.map(x=>x.why).join("; ")}}
@@ -396,7 +448,7 @@ function bigChart(k){const S=sessions(k);if(S.length<2)return `<p class="small">
   return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Progress chart">${grid}${path}${dots}${xl}</svg>
     <div class="legend"><span><i style="background:var(--accent)"></i>A (heavy)</span><span><i style="background:var(--b)"></i>B (reps)</span><span>${unitOf(k)}, weakest set</span></div>`}
 function dump(){return JSON.stringify({app:"ppl-log",v:2,exported:new Date().toISOString(),lastDay:meta.lastDay||null,
-  note:"Each entry: d date, v day type, w weight lb, r reps on weakest set, s reps per set (null = not done; woodchop alternates L,R), n note",
+  note:"Each entry: d date, v day type, w heaviest set weight lb, r reps on weakest set at that weight, s reps per set (null = not done; woodchop alternates L,R), ws weight per set as entered (per side on Smith), n note",
   workoutsNote:"Each workout: d date, day, start/end ISO times, min duration",
   smithNote:"Smith lifts: w = total incl. bar, p = plates per side, bar = bar weight. tg = rep targets per set",
   plan:Object.fromEntries(ALL.map(e=>[e[0],{name:e[1],sets:e[3],A:e[4],B:e[5],perSide:!!e[7],jump:jumpOf(e[0]),smith:SMITH.has(e[0])}])),logs,workouts})}
@@ -428,12 +480,18 @@ $("#title").addEventListener("click",()=>{taps++;clearTimeout(tapT);tapT=setTime
 $("#tgo").addEventListener("click",()=>T.end?tStop():tStart());
 document.addEventListener("click",async e=>{
   const tb=e.target.closest("[data-t]");if(tb){tAdj(+tb.dataset.t);return}
-  const b=e.target.closest("[data-day]");if(b){day=b.dataset.day;view="log";cur={};sel=null;render();window.scrollTo({top:0});return}
+  const b=e.target.closest("[data-day]");if(b){day=b.dataset.day;view="log";cur={};sel=null;openEx.clear();ctStop();render();window.scrollTo({top:0});return}
   const bub=e.target.closest("[data-bub]");if(bub){const k=bub.dataset.bub,i=+bub.dataset.i,x=cur[k].s[i],isSel=sel&&sel.k===k&&sel.i===i;
-    if(!x.done){x.done=true;sel={k,i};if(!meta.ws)wStart();else if(meta.ws.day!==day){meta.ws.day=day;store()}}else if(isSel){x.done=false;sel=null}else sel={k,i};
+    const c=cur[k];
+    if(!x.done){try{T.ac=T.ac||new (window.AudioContext||window.webkitAudioContext)();T.ac.resume?.()}catch{}
+      x.done=true;x.w=c.w;sel={k,i,w:false};if(!meta.ws)wStart();else if(meta.ws.day!==day){meta.ws.day=day;store()}
+      if(c.s.every(s=>s.done)){openEx.delete(k);sel=null;if(CT.k===k)ctStop()}else ctStart(k)}
+    else if(isSel){x.done=false;x.w=c.w;sel=null}else sel={k,i,w:true};
     persist(k);tPreset(EX[k]);renderLog();wCheckDone();return}
+  const op=e.target.closest("[data-open]");if(op){openEx.add(op.dataset.open);renderLog();return}
+  const cb=e.target.closest("[data-ct]");if(cb){const a=cb.dataset.ct;if(a==="x"){ctStop();renderLog()}else ctAdj(+a);return}
   const ad=e.target.closest("[data-adj]");if(ad&&sel){const x=cur[sel.k].s[sel.i];x.r=Math.max(0,Math.min(99,x.r+ +ad.dataset.adj));persist(sel.k);renderLog();return}
-  const as=e.target.closest("[data-addset]");if(as){const k=as.dataset.addset,c=cur[k],n=EX[k][7]?2:1;for(let j=0;j<n;j++){const p=c.s[c.s.length-n]||c.s[c.s.length-1];c.s.push({r:p?p.r:10,done:false})}persist(k);renderLog();return}
+  const as=e.target.closest("[data-addset]");if(as){const k=as.dataset.addset,c=cur[k],n=EX[k][7]?2:1;for(let j=0;j<n;j++){const p=c.s[c.s.length-n]||c.s[c.s.length-1];c.s.push({r:p?p.r:10,done:false,w:c.w})}persist(k);renderLog();return}
   const ds=e.target.closest("[data-dropset]");if(ds){const k=ds.dataset.dropset,c=cur[k],n=EX[k][7]?2:1;if(c.s.length>n){c.s.splice(-n,n);if(sel&&sel.k===k&&sel.i>=c.s.length)sel=null;persist(k);renderLog()}return}
   const fm=e.target.closest("[data-form]");if(fm){openForm(fm.dataset.form);return}
   const ex=e.target.closest("[data-ex]");if(ex){focusEx=ex.dataset.ex;renderProg();window.scrollTo({top:0,behavior:"smooth"});return}
@@ -456,8 +514,12 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"){$("#modal").hidden=
 document.addEventListener("change",e=>{const t=e.target;if(t.id==="sclock"){meta.showClock=t.checked;store();wDraw()}
   if(t.id==="sbar"){const b=parseFloat(t.value);if(b>=0){meta.bar=b;store();cur={};if(view==="log")renderLog()}}
   if(t.dataset?.jump){const j=parseFloat(t.value);if(j>=0){meta.jump=meta.jump||{};meta.jump[t.dataset.jump]=j;store();cur={};if(view==="log")renderLog()}}});
-document.addEventListener("input",e=>{const el=e.target,k=el.dataset.k;if(!k||!cur[k])return;cur[k][el.dataset.f]=el.value;
-  if(cur[k].s.some(x=>x.done))persist(k)});
+document.addEventListener("input",e=>{const el=e.target,k=el.dataset.k;if(!k||!cur[k])return;const c=cur[k];
+  if(el.dataset.f==="w"){if(sel&&sel.k===k&&sel.w&&c.s[sel.i])c.s[sel.i].w=el.value;else{c.w=el.value;c.s.forEach(x=>{if(!x.done)x.w=el.value})}}
+  else c[el.dataset.f]=el.value;
+  if(c.s.some(x=>x.done))persist(k)});
+/* redraw bubble weight labels after a weight edit, without stealing focus mid-typing */
+document.addEventListener("change",e=>{if(e.target.dataset?.f==="w"&&view==="log")renderLog()});
 
 /* ---------- install as an app ---------- */
 let promptEv=null;
