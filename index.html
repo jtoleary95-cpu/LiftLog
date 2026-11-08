@@ -158,6 +158,62 @@ textarea{width:100%;min-height:110px;font:500 .8rem var(--mono);color:var(--ink)
 .minirow .mk{color:var(--go);font-weight:700}
 .bub .sl.wv{font:600 .62rem var(--mono);letter-spacing:0;text-transform:none}
 @media (prefers-reduced-motion:no-preference){.bub{transition:background .12s,border-color .12s}}
+
+/* ---------- food page: swipe left from the log. Meals column + narrow water column, totals and water ring pinned at the bottom ---------- */
+#food{position:fixed;inset:0;z-index:15;background:var(--bg);transform:translateX(100%);visibility:hidden;transition:transform .25s ease,visibility 0s linear .25s;
+  padding:env(safe-area-inset-top,0px) max(12px,env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(12px,env(safe-area-inset-left,0px))}
+#food.on{transform:none;visibility:visible;transition:transform .25s ease}
+body.fopen{overflow:hidden}
+.fgrid{max-width:560px;height:100%;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) 18%;grid-template-rows:auto minmax(0,1fr) auto;gap:8px;padding-block:10px}
+.fhead{grid-column:1/-1;display:flex;align-items:center;gap:10px}
+.fhead h1{flex:1}
+.fhead .fdate{font:500 .85rem var(--body);color:var(--soft)}
+.fmeals{overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:8px;padding-bottom:4px}
+.meal{background:var(--card);border:1.5px solid var(--line);border-radius:10px;flex:none}
+.meal.done{border-color:var(--go)}
+.mh{display:flex;align-items:center;gap:10px;padding:8px 10px;min-height:52px;cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.mh input{width:26px;height:26px;accent-color:var(--go);flex:none;margin:0}
+.mn{flex:1;min-width:0;font:600 1.02rem var(--body)}
+.mn small{display:block;font:500 .74rem var(--mono);color:var(--soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meal.done .mn>span{color:var(--soft);text-decoration:line-through}
+.chev{color:var(--soft);transition:transform .15s;flex:none}
+.meal.open .chev{transform:rotate(180deg)}
+.mb{border-top:1px solid var(--line);padding:8px 10px 10px;display:flex;flex-direction:column;gap:6px}
+.it{display:grid;grid-template-columns:minmax(0,1fr) 62px 38px 32px;align-items:center;gap:5px;font-size:.9rem}
+.it .in{min-width:0}
+.it .in small{display:block;font:500 .7rem var(--mono);color:var(--soft)}
+.it input,.mrow input,.fform input,.fsearch{width:100%;min-height:36px;font:500 .9rem var(--mono);color:var(--ink);background:var(--field);border:1.5px solid var(--line);border-radius:7px;padding:4px 6px}
+.it .u{color:var(--soft);font-size:.78rem;overflow:hidden;text-overflow:ellipsis}
+.ix{width:32px;height:32px;border-radius:7px;border:1.5px solid var(--line);background:transparent;color:var(--soft);font-size:1.1rem;line-height:1;cursor:pointer;padding:0}
+.mrow{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.mrow input{flex:1;min-width:120px;font-family:var(--body)}
+.mrow .btn{min-height:36px;padding:6px 10px}
+.fadd{flex:none;font:600 .95rem var(--body);background:transparent;color:var(--accent);border:1.5px dashed var(--accent);border-radius:10px;min-height:46px;cursor:pointer}
+.ftot{background:var(--card);border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:5px;cursor:pointer}
+.tr{display:grid;grid-template-columns:60px minmax(0,1fr) auto;align-items:center;gap:8px;font-size:.8rem}
+.tr b{font:600 .72rem var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--soft)}
+.tr span{min-width:84px;text-align:right;font:500 .8rem var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tbar{height:8px;border-radius:4px;background:var(--field);overflow:hidden}
+.tbar i{display:block;height:100%;background:var(--accent);border-radius:4px}
+.tr.hit .tbar i{background:var(--go)}.tr.hit span{color:var(--go)}
+.tr.over .tbar i{background:var(--warn)}.tr.over span{color:var(--warn)}
+.fwater{display:flex;flex-direction:column;gap:6px;min-height:0}
+.wadd{flex:1;min-height:0;border-radius:10px;border:1.5px dashed var(--accent);background:var(--card);color:var(--accent);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:700 1.8rem/1 var(--display);cursor:pointer;touch-action:manipulation;padding:0}
+.wadd small{font:600 .68rem var(--body);letter-spacing:.04em;color:var(--soft)}
+.wminus{min-height:36px;border-radius:8px;border:1.5px solid var(--line);background:var(--card);color:var(--soft);font:600 .9rem var(--mono);cursor:pointer;padding:0}
+.fring{display:flex;align-items:flex-end;justify-content:center;cursor:pointer;touch-action:manipulation}
+.fring svg{width:100%;max-width:72px;height:auto;display:block}
+.fring text{font:600 15px var(--mono);fill:var(--ink)}
+.fring.hit text{fill:var(--go)}
+.fsheet{position:absolute;inset:0;z-index:2;background:var(--shade);display:flex;align-items:flex-end;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) 0 0}
+.fsheet .mbox{max-width:560px;border-radius:12px 12px 0 0;max-height:100%;overflow-y:auto;padding-bottom:max(16px,env(safe-area-inset-bottom,0px))}
+.pick{display:flex;flex-direction:column}
+.prow{display:flex;align-items:center;gap:8px;padding:10px 4px;border-top:1px solid var(--line);cursor:pointer;background:none;border-left:0;border-right:0;border-bottom:0;color:var(--ink);text-align:left;font:inherit;width:100%}
+.prow span{flex:1;font-weight:600}
+.prow small{font:500 .74rem var(--mono);color:var(--soft)}
+.fform{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fform label{display:flex;flex-direction:column;gap:3px;font:600 .72rem var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--soft)}
+.fform .full{grid-column:1/-1}
 </style>
 </head>
 <body>
@@ -193,6 +249,16 @@ textarea{width:100%;min-height:110px;font:500 .8rem var(--mono);color:var(--ink)
   </main>
   <main id="progview" hidden></main>
 </div>
+<section id="food" aria-label="Food" aria-hidden="true">
+  <div class="fgrid">
+    <div class="fhead"><h1>Food</h1><span class="fdate" id="fdate"></span></div>
+    <div class="fmeals" id="fmeals"></div>
+    <div class="fwater"><button class="wminus" data-fw="-1" aria-label="Remove one bottle">−1</button><button class="wadd" data-fw="1" aria-label="Add a 500 ml bottle">+<small>500 ml</small></button></div>
+    <div class="ftot" id="ftot" data-ftgt role="button" tabindex="0" aria-label="Daily totals. Tap to edit targets"></div>
+    <div class="fring" id="fring" data-fw="1" role="button" aria-label="Add a 500 ml bottle"></div>
+  </div>
+  <div class="fsheet" id="fsheet" hidden><div class="mbox" id="fsbody"></div></div>
+</section>
 <div class="modal" id="smodal" hidden role="dialog" aria-modal="true" aria-labelledby="stitle">
   <div class="mbox" style="max-height:88vh;overflow-y:auto"><div class="mhead"><h3 id="stitle">Settings</h3><button class="btn" data-act="closeSet">Close</button></div><div id="sbody"></div></div>
 </div>
@@ -451,7 +517,7 @@ function dump(){return JSON.stringify({app:"ppl-log",v:2,exported:new Date().toI
   note:"Each entry: d date, v day type, w heaviest set weight lb, r reps on weakest set at that weight, s reps per set (null = not done; woodchop alternates L,R), ws weight per set as entered (per side on Smith), n note",
   workoutsNote:"Each workout: d date, day, start/end ISO times, min duration",
   smithNote:"Smith lifts: w = total incl. bar, p = plates per side, bar = bar weight. tg = rep targets per set",
-  plan:Object.fromEntries(ALL.map(e=>[e[0],{name:e[1],sets:e[3],A:e[4],B:e[5],perSide:!!e[7],jump:jumpOf(e[0]),smith:SMITH.has(e[0])}])),logs,workouts})}
+  plan:Object.fromEntries(ALL.map(e=>[e[0],{name:e[1],sets:e[3],A:e[4],B:e[5],perSide:!!e[7],jump:jumpOf(e[0]),smith:SMITH.has(e[0])}])),logs,workouts,food:typeof foodExport==="function"?foodExport():undefined})}
 function renderProg(){const dates=new Set(Object.values(logs).flat().map(x=>x.d));
   const cut=ymd(new Date(Date.now()-28*864e5)),recentDays=[...dates].filter(d=>d>cut).length,lastD=[...dates].sort().pop();
   const st=ALL.map(e=>({e,s:status(e[0])})),flags=st.filter(x=>x.s.c==="stall"||x.s.c==="drop");
@@ -509,7 +575,7 @@ document.addEventListener("click",async e=>{
   if(a==="copy"){const txt=dump();try{await navigator.clipboard.writeText(txt);meta.backup=today();store();renderProg();$("#copymsg").textContent="Copied. Paste it into a note, email or chat to keep it."}
     catch{const box=$("#dumpbox");box.hidden=false;box.value=txt;box.focus();box.select();$("#copymsg").textContent="Copying was blocked. The text is selected below; copy it by hand."}}
   if(a==="showRestore")$("#restore").hidden=false;
-  if(a==="restore"){try{const d=JSON.parse($("#restorebox").value);if(!d||typeof d.logs!=="object")throw 0;logs=d.logs;if(Array.isArray(d.workouts))workouts=d.workouts;if(d.lastDay)meta.lastDay=d.lastDay;store();cur={};sel=null;view="log";render();$("#status").textContent="Backup restored."}catch{$("#restorebox").value="";$("#restorebox").placeholder="That isn't a backup from this app. Paste the full text from Copy data."}}});
+  if(a==="restore"){try{const d=JSON.parse($("#restorebox").value);if(!d||typeof d.logs!=="object")throw 0;logs=d.logs;if(Array.isArray(d.workouts))workouts=d.workouts;if(d.lastDay)meta.lastDay=d.lastDay;if(d.food&&typeof foodImport==="function")foodImport(d.food);store();cur={};sel=null;view="log";render();$("#status").textContent="Backup restored."}catch{$("#restorebox").value="";$("#restorebox").placeholder="That isn't a backup from this app. Paste the full text from Copy data."}}});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){$("#modal").hidden=true;$("#smodal").hidden=true}if(e.key==="Enter"&&e.target.dataset?.k){e.preventDefault();e.target.blur()}if((e.key==="Enter"||e.key===" ")&&e.target.dataset?.ex){e.preventDefault();e.target.click()}});
 document.addEventListener("change",e=>{const t=e.target;if(t.id==="sclock"){meta.showClock=t.checked;store();wDraw()}
   if(t.id==="sbar"){const b=parseFloat(t.value);if(b>=0){meta.bar=b;store();cur={};if(view==="log")renderLog()}}
@@ -528,6 +594,130 @@ $("#install").addEventListener("click",async()=>{if(!promptEv)return;promptEv.pr
 if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 
 load();day=meta.at===today()&&meta.lastDay?meta.lastDay:nextDay();render();tDraw();wDraw();
+
+/* ---------- food page ---------- */
+/* staples: id -> [name, unit, cal, protein g, fat g, carbs g] per 1 unit. Hidden list; meals reference these, so any edit recalculates */
+const FLS="ppl-food-v1";
+const ST0={
+  egg:["Egg","egg",72,6.3,4.8,0.4],banana:["Banana","medium",105,1.3,0.4,27],silk:["Silk Original","cup",110,8,4.5,9],
+  pb:["Peanut butter","tbsp",95,4,8,3.5],cocoa:["Cocoa, unsweetened","tbsp",12,1,0.7,3],creatine:["Creatine","g",0,0,0,0],
+  tvp:["TVP, dry","cup",320,48,1,30],soy:["Soy sauce","tsp",3,0.4,0,0.3],oats:["Rolled oats, dry","cup",300,10,5.5,54],
+  cinn:["Cinnamon","tsp",6,0.1,0,2],vanilla:["Vanilla extract","tsp",12,0,0,0.5],salt:["Iodized salt","tsp",0,0,0,0],
+  apple:["Apple","medium",95,0.5,0.3,25],sardine:["Sardines, bone-in","can",190,23,10,0],sweetpot:["Sweet potato","medium",112,2,0.1,26],
+  cabbage:["Cabbage, cooked","cup",34,1.9,0.1,8],oil:["Olive oil","tsp",40,0,4.5,0],lentil:["Lentils, dry","cup",680,48,2,115],
+  carrot:["Carrot","medium",25,0.6,0.1,6],spinach:["Spinach, frozen","cup",45,5,0.7,7],d3:["Vitamin D3","pill",0,0,0,0],
+  tuna:["Tuna","can",170,37,1.5,0],rice:["White rice, cooked","cup",205,4.3,0.4,45],broccoli:["Broccoli","cup",31,2.6,0.3,6],
+  bread:["Whole grain bread","slice",80,4,1,14]};
+const MEALS0=[
+  {id:"eggs",name:"Eggs",items:[["egg",4]]},
+  {id:"smoothie",name:"Smoothie",items:[["banana",1],["silk",.5],["pb",1],["cocoa",1],["creatine",5]]},
+  {id:"tvpbowl",name:"TVP bowl",items:[["tvp",.5],["soy",1]]},
+  {id:"oats",name:"Overnight oats",items:[["oats",.5],["silk",.5],["cinn",.5],["vanilla",.25],["salt",.125]]},
+  {id:"banana",name:"Banana",items:[["banana",1]]},
+  {id:"fish",name:"Fish plate",items:[["sardine",1],["sweetpot",1],["cabbage",1],["oil",1],["d3",1]]},
+  {id:"dinner",name:"Dinner",items:[["lentil",.25],["tvp",.75],["egg",3],["cabbage",2],["carrot",1],["spinach",.5],["oil",1],["salt",.25]]}];
+/* water: 7 × 500 ml = 3.5 L. ~3 L from drinks covers the 3.7 L daily total-water intake for men (about a fifth comes from food), plus ~0.5 L for 90 min of lifting */
+const TGT0={kcal:2135,p:169,f:72,c:209,w:7};
+let F={},foodOn=false,fOpen=new Set(),fTap={},fDayKey=null,fPickMid=null;
+const r1=x=>Math.round(x*10)/10;
+function fLoad(){try{F=JSON.parse(localStorage.getItem(FLS)||"{}")||{}}catch{F={}}
+  F.staples={...ST0,...(F.staples||{})};if(!Array.isArray(F.meals))F.meals=JSON.parse(JSON.stringify(MEALS0));
+  F.tgt={...TGT0,...(F.tgt||{})};F.days=F.days||{}}
+function fStore(){try{localStorage.setItem(FLS,JSON.stringify(F))}catch{}}
+const stOf=sid=>F.staples[sid]||["Unknown food","",0,0,0,0];
+const mac=(sid,q)=>{const s=stOf(sid);return [s[2]*q,s[3]*q,s[4]*q,s[5]*q]};
+const sumItems=items=>items.reduce((a,[sid,q])=>{const m=mac(sid,q);return a.map((v,i)=>v+m[i])},[0,0,0,0]);
+const mealOf=id=>F.meals.find(m=>m.id===id);
+function fDay(){const t=today();return F.days[t]||(F.days[t]={m:{},w:[]})}
+/* logged meal: {name, t ISO time checked, items:[[food, unit, amount, cal, P, F, C]]} so history stands on its own */
+function snap(m,t){return {name:m.name,t:t||new Date().toISOString(),items:m.items.map(([sid,q])=>{const s=stOf(sid);return [s[0],s[1],q,...mac(sid,q).map(r1)]})}}
+function afterEdit(m){const d=F.days[today()];if(d&&d.m[m.id])d.m[m.id]=snap(m,d.m[m.id].t);fStore();fRender()}
+
+const CHEV=`<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>`;
+function itemHtml(mid,[sid,q],i){const s=stOf(sid),[k,p]=mac(sid,q);
+  return `<div class="it"><div class="in">${esc(s[0])}<small>${Math.round(k)} cal · ${r1(p)}g P</small></div><input type="number" inputmode="decimal" step="any" min="0" value="${q}" data-fq="${mid}" data-fi="${i}" aria-label="Amount of ${esc(s[0])}"><span class="u">${esc(s[1])}</span><button class="ix" data-fx="${mid}" data-fi="${i}" aria-label="Remove ${esc(s[0])}">×</button></div>`}
+function mealHtml(m,done){const [k,p]=sumItems(m.items),open=fOpen.has(m.id);
+  return `<div class="meal ${done?"done":""} ${open?"open":""}"><div class="mh" data-mh="${m.id}"><input type="checkbox" data-mchk="${m.id}" ${done?"checked":""} aria-label="Ate ${esc(m.name)}"><div class="mn"><span>${esc(m.name)}</span><small>${Math.round(k)} cal · ${Math.round(p)}g protein</small></div>${CHEV}</div>
+  ${open?`<div class="mb">${m.items.map((it,i)=>itemHtml(m.id,it,i)).join("")||`<p class="small" style="margin:0">Nothing in this meal yet.</p>`}
+    <div class="mrow"><button class="btn" data-fpick="${m.id}">+ Add food</button></div>
+    <div class="mrow"><input data-mname="${m.id}" value="${esc(m.name)}" maxlength="40" aria-label="Meal name"><button class="btn" data-mdel="${m.id}">Delete meal</button></div></div>`:""}</div>`}
+function ringSvg(n,t){const R=27,C=2*Math.PI*R,seg=C/t,gap=t>1?3:0,hit=n>=t;let s="";
+  for(let i=0;i<t;i++)s+=`<circle cx="36" cy="36" r="${R}" fill="none" stroke="${i<n?(hit?"var(--go)":"var(--accent)"):"var(--line)"}" stroke-width="8" stroke-dasharray="${(seg-gap).toFixed(2)} ${(C-seg+gap).toFixed(2)}" transform="rotate(${(-90+i*360/t).toFixed(2)} 36 36)"/>`;
+  return `<svg viewBox="0 0 72 72" role="img" aria-label="${n} of ${t} bottles">${s}<text x="36" y="41" text-anchor="middle">${n}/${t}</text></svg>`}
+function fTotals(){const dd=F.days[today()]||{m:{},w:[]},sum=[0,0,0,0],T=F.tgt;
+  Object.values(dd.m).forEach(s=>s.items.forEach(x=>{for(let i=0;i<4;i++)sum[i]+=x[3+i]}));
+  $("#ftot").innerHTML=[["Cal",sum[0],T.kcal,"",1],["Protein",sum[1],T.p,"g",0],["Fat",sum[2],T.f,"g",1],["Carbs",sum[3],T.c,"g",1]].map(([l,v,t,u,cap])=>{
+    const pct=t?v/t:0,cls=cap&&pct>1.05?"over":pct>=.95?"hit":"";
+    return `<div class="tr ${cls}"><b>${l}</b><div class="tbar"><i style="width:${Math.min(100,pct*100).toFixed(1)}%"></i></div><span>${Math.round(v).toLocaleString()}/${Math.round(t).toLocaleString()}${u}</span></div>`}).join("");
+  const n=dd.w.length;$("#fring").innerHTML=ringSvg(n,Math.max(1,F.tgt.w|0));$("#fring").classList.toggle("hit",n>=F.tgt.w)}
+function fRender(){fDayKey=today();const dd=F.days[fDayKey]||{m:{},w:[]},box=$("#fmeals"),top=box.scrollTop;
+  $("#fdate").textContent=toDate(fDayKey).toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
+  box.innerHTML=F.meals.map(m=>mealHtml(m,!!dd.m[m.id])).join("")+`<button class="fadd" data-fnew>+ Add meal</button>`;box.scrollTop=top;fTotals()}
+
+function fSheet(h){$("#fsbody").innerHTML=h;$("#fsheet").hidden=false}
+function fSheetClose(){$("#fsheet").hidden=true}
+function openPicker(mid){fPickMid=mid;fSheet(`<div class="mhead"><h3>Add food</h3><button class="btn" data-fclose>Close</button></div><input class="fsearch" id="fsearch" placeholder="Search your foods" aria-label="Search your foods" autocomplete="off"><div class="pick" id="fplist"></div><button class="btn" data-fnewfood>New food</button>`);fPickList("")}
+function fPickList(q){const ql=q.trim().toLowerCase();
+  $("#fplist").innerHTML=Object.entries(F.staples).filter(([,s])=>s[0].toLowerCase().includes(ql)).sort((a,b)=>a[1][0].localeCompare(b[1][0]))
+    .map(([sid,s])=>`<button class="prow" data-fadd="${sid}"><span>${esc(s[0])}</span><small>per ${esc(s[1])}: ${s[2]} cal · ${s[3]}P ${s[4]}F ${s[5]}C</small></button>`).join("")||`<p class="small">No match. Tap New food to add it.</p>`}
+function newFoodForm(){const name=$("#fsearch")?.value||"";
+  fSheet(`<div class="mhead"><h3>New food</h3><button class="btn" data-fclose>Close</button></div>
+  <div class="fform"><label class="full">Name<input id="nf-name" maxlength="40" value="${esc(name)}"></label><label>Unit<input id="nf-unit" maxlength="12" placeholder="cup, g, each"></label>
+  <label>Calories<input id="nf-k" type="number" inputmode="decimal" min="0" step="any"></label><label>Protein g<input id="nf-p" type="number" inputmode="decimal" min="0" step="any"></label>
+  <label>Fat g<input id="nf-f" type="number" inputmode="decimal" min="0" step="any"></label><label>Carbs g<input id="nf-c" type="number" inputmode="decimal" min="0" step="any"></label></div>
+  <p class="small" id="nf-msg" style="margin:0">Numbers are for 1 unit.</p><button class="btn pri" data-fsavefood>Add to meal</button>`)}
+function tgtForm(){const T=F.tgt;
+  fSheet(`<div class="mhead"><h3>Daily targets</h3><button class="btn" data-fclose>Close</button></div>
+  <div class="fform"><label>Calories<input id="tg-kcal" type="number" inputmode="decimal" min="0" value="${T.kcal}"></label><label>Protein g<input id="tg-p" type="number" inputmode="decimal" min="0" value="${T.p}"></label>
+  <label>Fat g<input id="tg-f" type="number" inputmode="decimal" min="0" value="${T.f}"></label><label>Carbs g<input id="tg-c" type="number" inputmode="decimal" min="0" value="${T.c}"></label>
+  <label class="full">Water, 500 ml bottles<input id="tg-w" type="number" inputmode="numeric" min="1" max="20" value="${T.w}"></label></div><button class="btn pri" data-ftsave>Save</button>`)}
+
+$("#food").addEventListener("click",e=>{const t=e.target;
+  const fw=t.closest("[data-fw]");if(fw){const d=fDay();if(+fw.dataset.fw>0){d.w.push(new Date().toISOString());try{navigator.vibrate?.(15)}catch{}}else d.w.pop();fStore();fTotals();return}
+  if(t.matches("[data-mchk]")){const id=t.dataset.mchk,m=mealOf(id),d=fDay();if(t.checked)d.m[id]=snap(m);else delete d.m[id];fStore();fRender();return}
+  const fx=t.closest("[data-fx]");if(fx){const m=mealOf(fx.dataset.fx);m.items.splice(+fx.dataset.fi,1);afterEdit(m);return}
+  const fp=t.closest("[data-fpick]");if(fp){openPicker(fp.dataset.fpick);return}
+  if(t.closest("[data-fnew]")){const id="m"+Date.now().toString(36);F.meals.push({id,name:"New meal",items:[]});fOpen.add(id);fStore();fRender();const inp=document.querySelector(`[data-mname="${id}"]`);inp?.focus();inp?.select();return}
+  const md=t.closest("[data-mdel]");if(md){const m=mealOf(md.dataset.mdel);if(confirm(`Delete ${m.name}? Past days keep their log.`)){F.meals=F.meals.filter(x=>x!==m);fOpen.delete(m.id);fStore();fRender()}return}
+  if(t.closest("[data-ftgt]")){tgtForm();return}
+  if(t.id==="fsheet"||t.closest("[data-fclose]")){fSheetClose();return}
+  const fa=t.closest("[data-fadd]");if(fa){const m=mealOf(fPickMid);if(m){m.items.push([fa.dataset.fadd,1]);fOpen.add(m.id);afterEdit(m)}fSheetClose();return}
+  if(t.closest("[data-fnewfood]")){newFoodForm();return}
+  if(t.closest("[data-fsavefood]")){const v=id=>parseFloat($(id).value),name=$("#nf-name").value.trim(),unit=$("#nf-unit").value.trim()||"serving",nums=["#nf-k","#nf-p","#nf-f","#nf-c"].map(v);
+    if(!name||nums.some(x=>!(x>=0))){$("#nf-msg").textContent="Fill in the name and all four numbers (0 is fine).";return}
+    const sid="u"+Date.now().toString(36);F.staples[sid]=[name,unit,...nums];const m=mealOf(fPickMid);if(m){m.items.push([sid,1]);fOpen.add(m.id);afterEdit(m)}else fStore();fSheetClose();return}
+  if(t.closest("[data-ftsave]")){const g=id=>parseFloat($(id).value);const T={kcal:g("#tg-kcal"),p:g("#tg-p"),f:g("#tg-f"),c:g("#tg-c"),w:Math.round(g("#tg-w"))};
+    for(const k in T)if(T[k]>=0&&!(k==="w"&&T[k]<1))F.tgt[k]=T[k];fStore();fTotals();fSheetClose();return}
+  /* meal header: tap a closed meal to open it, double-tap an open one to close it */
+  const mh=t.closest("[data-mh]");if(mh){const id=mh.dataset.mh,now=Date.now();
+    if(!fOpen.has(id)){fOpen.add(id);fTap[id]=0;fRender()}else if(now-(fTap[id]||0)<350){fOpen.delete(id);fTap[id]=0;fRender()}else fTap[id]=now}});
+$("#food").addEventListener("change",e=>{const t=e.target;
+  if(t.dataset.fq){const m=mealOf(t.dataset.fq),q=parseFloat(t.value);if(m&&q>=0){m.items[+t.dataset.fi][1]=q;afterEdit(m)}else fRender();return}
+  if(t.dataset.mname){const m=mealOf(t.dataset.mname),n=t.value.trim();if(m&&n){m.name=n;afterEdit(m)}}});
+$("#food").addEventListener("input",e=>{if(e.target.id==="fsearch")fPickList(e.target.value)});
+$("#food").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.matches("[data-fq],[data-mname]")){e.preventDefault();e.target.blur()}if(e.key==="Escape")fSheetClose()});
+
+/* ---------- swipe between log and food ---------- */
+function foodOpen(){if(foodOn)return;foodOn=true;fRender();$("#food").classList.add("on");$("#food").setAttribute("aria-hidden","false");document.body.classList.add("fopen");try{history.pushState({food:1},"")}catch{}}
+function foodHide(){foodOn=false;$("#food").classList.remove("on");$("#food").setAttribute("aria-hidden","true");document.body.classList.remove("fopen");fSheetClose()}
+function foodClose(){if(history.state&&history.state.food)history.back();else foodHide()}
+window.addEventListener("popstate",()=>{if(foodOn)foodHide()});
+let fsx=null;
+const modalUp=()=>["#modal","#smodal","#emodal"].some(s=>!$(s).hidden);
+document.addEventListener("touchstart",e=>{const el=e.target;fsx=null;if(e.touches.length!==1||el.closest("input,textarea,select,.fsheet,.modal"))return;
+  const p=e.touches[0];fsx={x:p.clientX,y:p.clientY,t:Date.now()}},{passive:true});
+document.addEventListener("touchend",e=>{if(!fsx)return;const p=e.changedTouches[0],dx=p.clientX-fsx.x,dy=p.clientY-fsx.y,dt=Date.now()-fsx.t;fsx=null;
+  if(dt>700||Math.abs(dx)<70||Math.abs(dx)<Math.abs(dy)*1.8)return;
+  if(dx<0&&!foodOn&&!modalUp())foodOpen();else if(dx>0&&foodOn&&$("#fsheet").hidden)foodClose()},{passive:true});
+/* new day at midnight: the page rolls over on its own */
+setInterval(()=>{if(foodOn&&fDayKey!==today())fRender()},30000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&foodOn&&fDayKey!==today())fRender()});
+
+/* included in Copy / Download data */
+function foodExport(){return {note:"days: date -> m (meals eaten: name, t time checked, items [food, unit, amount, cal, protein g, fat g, carbs g]) and w (ISO time of each 500 ml water). staples: per 1 unit [name, unit, cal, P, F, C]",
+  targets:F.tgt,meals:F.meals,staples:F.staples,days:F.days}}
+function foodImport(d){if(!d||typeof d!=="object")return;if(d.days)F.days=d.days;if(Array.isArray(d.meals))F.meals=d.meals;if(d.staples)F.staples={...ST0,...d.staples};if(d.targets)F.tgt={...TGT0,...d.targets};fStore()}
+fLoad();
 </script>
 </body>
 </html>
