@@ -159,16 +159,17 @@ textarea{width:100%;min-height:110px;font:500 .8rem var(--mono);color:var(--ink)
 .bub .sl.wv{font:600 .62rem var(--mono);letter-spacing:0;text-transform:none}
 @media (prefers-reduced-motion:no-preference){.bub{transition:background .12s,border-color .12s}}
 
-/* ---------- food page: swipe left from the log. Meals column + narrow water column, totals and water ring pinned at the bottom ---------- */
-#food{position:fixed;inset:0;z-index:15;background:var(--bg);transform:translateX(100%);visibility:hidden;transition:transform .25s ease,visibility 0s linear .25s;
+/* ---------- food + spending pages: swipe left from the log (Log → Food → Spending) ---------- */
+.panel{position:fixed;inset:0;z-index:15;background:var(--bg);transform:translateX(100%);visibility:hidden;transition:transform .25s ease,visibility 0s linear .25s;
   padding:env(safe-area-inset-top,0px) max(12px,env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(12px,env(safe-area-inset-left,0px))}
-#food.on{transform:none;visibility:visible;transition:transform .25s ease}
+.panel.on{transform:none;visibility:visible;transition:transform .25s ease}
+#spend{z-index:16}
 body.fopen{overflow:hidden}
-.fgrid{max-width:560px;height:100%;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) 18%;grid-template-rows:auto minmax(0,1fr) auto;gap:8px;padding-block:10px}
+.fgrid{max-width:560px;height:100%;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto minmax(0,1fr) auto;gap:8px;padding-block:10px}
 .fhead{grid-column:1/-1;display:flex;align-items:center;gap:10px}
 .fhead h1{flex:1}
 .fhead .fdate{font:500 .85rem var(--body);color:var(--soft)}
-.fmeals{overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:8px;padding-bottom:4px}
+.fmeals{grid-column:1/-1;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:8px;padding-bottom:4px}
 .meal{background:var(--card);border:1.5px solid var(--line);border-radius:10px;flex:none}
 .meal.done{border-color:var(--go)}
 .mh{display:flex;align-items:center;gap:10px;padding:8px 10px;min-height:52px;cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none}
@@ -182,14 +183,15 @@ body.fopen{overflow:hidden}
 .it{display:grid;grid-template-columns:minmax(0,1fr) 62px 38px 32px;align-items:center;gap:5px;font-size:.9rem}
 .it .in{min-width:0}
 .it .in small{display:block;font:500 .7rem var(--mono);color:var(--soft)}
-.it input,.mrow input,.fform input,.fsearch{width:100%;min-height:36px;font:500 .9rem var(--mono);color:var(--ink);background:var(--field);border:1.5px solid var(--line);border-radius:7px;padding:4px 6px}
+.it input,.mrow input,.fform input,.fform select,.fsearch{width:100%;min-height:36px;font:500 .9rem var(--mono);color:var(--ink);background:var(--field);border:1.5px solid var(--line);border-radius:7px;padding:4px 6px}
+.fform select{font-family:var(--body)}
 .it .u{color:var(--soft);font-size:.78rem;overflow:hidden;text-overflow:ellipsis}
-.ix{width:32px;height:32px;border-radius:7px;border:1.5px solid var(--line);background:transparent;color:var(--soft);font-size:1.1rem;line-height:1;cursor:pointer;padding:0}
+.ix{width:32px;height:32px;border-radius:7px;border:1.5px solid var(--line);background:transparent;color:var(--soft);font-size:1.1rem;line-height:1;cursor:pointer;padding:0;flex:none}
 .mrow{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .mrow input{flex:1;min-width:120px;font-family:var(--body)}
 .mrow .btn{min-height:36px;padding:6px 10px}
 .fadd{flex:none;font:600 .95rem var(--body);background:transparent;color:var(--accent);border:1.5px dashed var(--accent);border-radius:10px;min-height:46px;cursor:pointer}
-.ftot{background:var(--card);border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:5px;cursor:pointer}
+.ftot{background:var(--card);border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;justify-content:center;gap:5px;cursor:pointer}
 .tr{display:grid;grid-template-columns:60px minmax(0,1fr) auto;align-items:center;gap:8px;font-size:.8rem}
 .tr b{font:600 .72rem var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--soft)}
 .tr span{min-width:84px;text-align:right;font:500 .8rem var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -197,14 +199,12 @@ body.fopen{overflow:hidden}
 .tbar i{display:block;height:100%;background:var(--accent);border-radius:4px}
 .tr.hit .tbar i{background:var(--go)}.tr.hit span{color:var(--go)}
 .tr.over .tbar i{background:var(--warn)}.tr.over span{color:var(--warn)}
-.fwater{display:flex;flex-direction:column;gap:6px;min-height:0}
-.wadd{flex:1;min-height:0;border-radius:10px;border:1.5px dashed var(--accent);background:var(--card);color:var(--accent);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:700 1.8rem/1 var(--display);cursor:pointer;touch-action:manipulation;padding:0}
-.wadd small{font:600 .68rem var(--body);letter-spacing:.04em;color:var(--soft)}
-.wminus{min-height:36px;border-radius:8px;border:1.5px solid var(--line);background:var(--card);color:var(--soft);font:600 .9rem var(--mono);cursor:pointer;padding:0}
-.fring{display:flex;align-items:flex-end;justify-content:center;cursor:pointer;touch-action:manipulation}
-.fring svg{width:100%;max-width:72px;height:auto;display:block}
+.fring{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
+  background:var(--card);border:1.5px solid var(--line);border-radius:10px;padding:6px;width:96px}
+.fring svg{width:80px;height:80px;display:block;pointer-events:none}
 .fring text{font:600 15px var(--mono);fill:var(--ink)}
 .fring.hit text{fill:var(--go)}
+.fring small{font:600 .62rem var(--body);letter-spacing:.04em;color:var(--soft);pointer-events:none}
 .fsheet{position:absolute;inset:0;z-index:2;background:var(--shade);display:flex;align-items:flex-end;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) 0 0}
 .fsheet .mbox{max-width:560px;border-radius:12px 12px 0 0;max-height:100%;overflow-y:auto;padding-bottom:max(16px,env(safe-area-inset-bottom,0px))}
 .pick{display:flex;flex-direction:column}
@@ -214,6 +214,25 @@ body.fopen{overflow:hidden}
 .fform{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .fform label{display:flex;flex-direction:column;gap:3px;font:600 .72rem var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--soft)}
 .fform .full{grid-column:1/-1}
+/* spending page */
+.sgrid{max-width:560px;height:100%;margin:0 auto;display:flex;flex-direction:column;gap:8px;padding-block:10px}
+.sbody{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:10px;padding-bottom:12px}
+.sbody .box h3{font:700 1rem var(--display);letter-spacing:.04em;text-transform:uppercase;margin:0 0 6px}
+.seg{display:flex;border:1.5px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{font:600 .82rem var(--body);background:var(--card);color:var(--soft);border:0;padding:6px 10px;min-height:36px;cursor:pointer}
+.seg button.on{background:var(--accent);color:var(--accent-ink)}
+.skpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.skpis b{display:block;font:600 1.25rem var(--mono);font-variant-numeric:tabular-nums}
+.skpis span{font-size:.75rem;color:var(--soft)}
+.srow2{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--line);font-size:.9rem}
+.srow2:first-of-type{border-top:0}
+.srow2 .nm{flex:1;min-width:0}
+.srow2 .nm small{display:block;font:500 .72rem var(--mono);color:var(--soft)}
+.srow2 .v{font:600 .9rem var(--mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.srow2 .v small{display:block;font:500 .7rem var(--mono);color:var(--soft)}
+.stot{display:flex;justify-content:space-between;gap:8px;border-top:1.5px solid var(--ink);padding-top:7px;margin-top:2px;font:600 .9rem var(--mono)}
+.miss{color:var(--warn)}
+.sprev{font:500 .85rem var(--mono);color:var(--accent);margin:0}
 </style>
 </head>
 <body>
@@ -249,15 +268,18 @@ body.fopen{overflow:hidden}
   </main>
   <main id="progview" hidden></main>
 </div>
-<section id="food" aria-label="Food" aria-hidden="true">
+<section id="food" class="panel" aria-label="Food" aria-hidden="true">
   <div class="fgrid">
     <div class="fhead"><h1>Food</h1><span class="fdate" id="fdate"></span></div>
     <div class="fmeals" id="fmeals"></div>
-    <div class="fwater"><button class="wminus" data-fw="-1" aria-label="Remove one bottle">−1</button><button class="wadd" data-fw="1" aria-label="Add a 500 ml bottle">+<small>500 ml</small></button></div>
     <div class="ftot" id="ftot" data-ftgt role="button" tabindex="0" aria-label="Daily totals. Tap to edit targets"></div>
-    <div class="fring" id="fring" data-fw="1" role="button" aria-label="Add a 500 ml bottle"></div>
+    <div class="fring" id="fring" role="button" aria-label="Water. Tap to add 500 ml, long-press to remove one"></div>
   </div>
   <div class="fsheet" id="fsheet" hidden><div class="mbox" id="fsbody"></div></div>
+</section>
+<section id="spend" class="panel" aria-label="Spending" aria-hidden="true">
+  <div class="sgrid"><div class="fhead"><h1>Spending</h1></div><div class="sbody" id="sbody"></div></div>
+  <div class="fsheet" id="ssheet" hidden><div class="mbox" id="ssbody"></div></div>
 </section>
 <div class="modal" id="smodal" hidden role="dialog" aria-modal="true" aria-labelledby="stitle">
   <div class="mbox" style="max-height:88vh;overflow-y:auto"><div class="mhead"><h3 id="stitle">Settings</h3><button class="btn" data-act="closeSet">Close</button></div><div id="sbody"></div></div>
@@ -596,18 +618,18 @@ if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(
 load();day=meta.at===today()&&meta.lastDay?meta.lastDay:nextDay();render();tDraw();wDraw();
 
 /* ---------- food page ---------- */
-/* staples: id -> [name, unit, cal, protein g, fat g, carbs g] per 1 unit. Hidden list; meals reference these, so any edit recalculates */
+/* staples: id -> [name, unit, cal, protein g, fat g, carbs g, grams (or ml) per unit as bought]. Hidden list; meals reference these, so any edit recalculates */
 const FLS="ppl-food-v1";
 const ST0={
-  egg:["Egg","egg",72,6.3,4.8,0.4],banana:["Banana","medium",105,1.3,0.4,27],silk:["Silk Original","cup",110,8,4.5,9],
-  pb:["Peanut butter","tbsp",95,4,8,3.5],cocoa:["Cocoa, unsweetened","tbsp",12,1,0.7,3],creatine:["Creatine","g",0,0,0,0],
-  tvp:["TVP, dry","cup",320,48,1,30],soy:["Soy sauce","tsp",3,0.4,0,0.3],oats:["Rolled oats, dry","cup",300,10,5.5,54],
-  cinn:["Cinnamon","tsp",6,0.1,0,2],vanilla:["Vanilla extract","tsp",12,0,0,0.5],salt:["Iodized salt","tsp",0,0,0,0],
-  apple:["Apple","medium",95,0.5,0.3,25],sardine:["Sardines, bone-in","can",190,23,10,0],sweetpot:["Sweet potato","medium",112,2,0.1,26],
-  cabbage:["Cabbage, cooked","cup",34,1.9,0.1,8],oil:["Olive oil","tsp",40,0,4.5,0],lentil:["Lentils, dry","cup",680,48,2,115],
-  carrot:["Carrot","medium",25,0.6,0.1,6],spinach:["Spinach, frozen","cup",45,5,0.7,7],d3:["Vitamin D3","pill",0,0,0,0],
-  tuna:["Tuna","can",170,37,1.5,0],rice:["White rice, cooked","cup",205,4.3,0.4,45],broccoli:["Broccoli","cup",31,2.6,0.3,6],
-  bread:["Whole grain bread","slice",80,4,1,14]};
+  egg:["Egg","egg",72,6.3,4.8,0.4,50],banana:["Banana","medium",105,1.3,0.4,27,118],silk:["Silk Original","cup",110,8,4.5,9,240],
+  pb:["Peanut butter","tbsp",95,4,8,3.5,16],cocoa:["Cocoa, unsweetened","tbsp",12,1,0.7,3,5.4],creatine:["Creatine","g",0,0,0,0,1],
+  tvp:["TVP, dry","cup",320,48,1,30,96],soy:["Soy sauce","tsp",3,0.4,0,0.3,5],oats:["Rolled oats, dry","cup",300,10,5.5,54,80],
+  cinn:["Cinnamon","tsp",6,0.1,0,2,2.6],vanilla:["Vanilla extract","tsp",12,0,0,0.5,4.9],salt:["Iodized salt","tsp",0,0,0,0,6],
+  apple:["Apple","medium",95,0.5,0.3,25,182],sardine:["Sardines, bone-in","can",190,23,10,0,106],sweetpot:["Sweet potato","medium",112,2,0.1,26,130],
+  cabbage:["Cabbage, cooked","cup",34,1.9,0.1,8,150],oil:["Olive oil","tsp",40,0,4.5,0,4.9],lentil:["Lentils, dry","cup",680,48,2,115,192],
+  carrot:["Carrot","medium",25,0.6,0.1,6,61],spinach:["Spinach, frozen","cup",45,5,0.7,7,150],d3:["Vitamin D3","pill",0,0,0,0,0],
+  tuna:["Tuna","can",170,37,1.5,0,142],rice:["White rice, cooked","cup",205,4.3,0.4,45,53],broccoli:["Broccoli","cup",31,2.6,0.3,6,91],
+  bread:["Whole grain bread","slice",80,4,1,14,43]};
 const MEALS0=[
   {id:"eggs",name:"Eggs",items:[["egg",4]]},
   {id:"smoothie",name:"Smoothie",items:[["banana",1],["silk",.5],["pb",1],["cocoa",1],["creatine",5]]},
@@ -618,13 +640,14 @@ const MEALS0=[
   {id:"dinner",name:"Dinner",items:[["lentil",.25],["tvp",.75],["egg",3],["cabbage",2],["carrot",1],["spinach",.5],["oil",1],["salt",.25]]}];
 /* water: 7 × 500 ml = 3.5 L. ~3 L from drinks covers the 3.7 L daily total-water intake for men (about a fifth comes from food), plus ~0.5 L for 90 min of lifting */
 const TGT0={kcal:2135,p:169,f:72,c:209,w:7};
-let F={},foodOn=false,fOpen=new Set(),fTap={},fDayKey=null,fPickMid=null;
+let F={},page=0,fOpen=new Set(),fDayKey=null,fPickMid=null;
 const r1=x=>Math.round(x*10)/10;
 function fLoad(){try{F=JSON.parse(localStorage.getItem(FLS)||"{}")||{}}catch{F={}}
-  F.staples={...ST0,...(F.staples||{})};if(!Array.isArray(F.meals))F.meals=JSON.parse(JSON.stringify(MEALS0));
-  F.tgt={...TGT0,...(F.tgt||{})};F.days=F.days||{}}
+  const st=F.staples||{};for(const k in st)if(st[k].length<7)st[k][6]=ST0[k]?ST0[k][6]:0;
+  F.staples={...ST0,...st};if(!Array.isArray(F.meals))F.meals=JSON.parse(JSON.stringify(MEALS0));
+  F.tgt={...TGT0,...(F.tgt||{})};F.days=F.days||{};F.purch=Array.isArray(F.purch)?F.purch:[];F.pmode=F.pmode==="avg"?"avg":"latest"}
 function fStore(){try{localStorage.setItem(FLS,JSON.stringify(F))}catch{}}
-const stOf=sid=>F.staples[sid]||["Unknown food","",0,0,0,0];
+const stOf=sid=>F.staples[sid]||["Unknown food","",0,0,0,0,0];
 const mac=(sid,q)=>{const s=stOf(sid);return [s[2]*q,s[3]*q,s[4]*q,s[5]*q]};
 const sumItems=items=>items.reduce((a,[sid,q])=>{const m=mac(sid,q);return a.map((v,i)=>v+m[i])},[0,0,0,0]);
 const mealOf=id=>F.meals.find(m=>m.id===id);
@@ -643,7 +666,7 @@ function mealHtml(m,done){const [k,p]=sumItems(m.items),open=fOpen.has(m.id);
     <div class="mrow"><input data-mname="${m.id}" value="${esc(m.name)}" maxlength="40" aria-label="Meal name"><button class="btn" data-mdel="${m.id}">Delete meal</button></div></div>`:""}</div>`}
 function ringSvg(n,t){const R=27,C=2*Math.PI*R,seg=C/t,gap=t>1?3:0,hit=n>=t;let s="";
   for(let i=0;i<t;i++)s+=`<circle cx="36" cy="36" r="${R}" fill="none" stroke="${i<n?(hit?"var(--go)":"var(--accent)"):"var(--line)"}" stroke-width="8" stroke-dasharray="${(seg-gap).toFixed(2)} ${(C-seg+gap).toFixed(2)}" transform="rotate(${(-90+i*360/t).toFixed(2)} 36 36)"/>`;
-  return `<svg viewBox="0 0 72 72" role="img" aria-label="${n} of ${t} bottles">${s}<text x="36" y="41" text-anchor="middle">${n}/${t}</text></svg>`}
+  return `<svg viewBox="0 0 72 72" role="img" aria-label="${n} of ${t} bottles">${s}<text x="36" y="41" text-anchor="middle">${n}/${t}</text></svg><small>+500 ml</small>`}
 function fTotals(){const dd=F.days[today()]||{m:{},w:[]},sum=[0,0,0,0],T=F.tgt;
   Object.values(dd.m).forEach(s=>s.items.forEach(x=>{for(let i=0;i<4;i++)sum[i]+=x[3+i]}));
   $("#ftot").innerHTML=[["Cal",sum[0],T.kcal,"",1],["Protein",sum[1],T.p,"g",0],["Fat",sum[2],T.f,"g",1],["Carbs",sum[3],T.c,"g",1]].map(([l,v,t,u,cap])=>{
@@ -664,16 +687,24 @@ function newFoodForm(){const name=$("#fsearch")?.value||"";
   fSheet(`<div class="mhead"><h3>New food</h3><button class="btn" data-fclose>Close</button></div>
   <div class="fform"><label class="full">Name<input id="nf-name" maxlength="40" value="${esc(name)}"></label><label>Unit<input id="nf-unit" maxlength="12" placeholder="cup, g, each"></label>
   <label>Calories<input id="nf-k" type="number" inputmode="decimal" min="0" step="any"></label><label>Protein g<input id="nf-p" type="number" inputmode="decimal" min="0" step="any"></label>
-  <label>Fat g<input id="nf-f" type="number" inputmode="decimal" min="0" step="any"></label><label>Carbs g<input id="nf-c" type="number" inputmode="decimal" min="0" step="any"></label></div>
-  <p class="small" id="nf-msg" style="margin:0">Numbers are for 1 unit.</p><button class="btn pri" data-fsavefood>Add to meal</button>`)}
+  <label>Fat g<input id="nf-f" type="number" inputmode="decimal" min="0" step="any"></label><label>Carbs g<input id="nf-c" type="number" inputmode="decimal" min="0" step="any"></label>
+  <label>Grams per unit<input id="nf-g" type="number" inputmode="decimal" min="0" step="any" placeholder="optional"></label></div>
+  <p class="small" id="nf-msg" style="margin:0">Numbers are for 1 unit. Grams per unit lets purchases by lb or oz price it.</p><button class="btn pri" data-fsavefood>Add to meal</button>`)}
 function tgtForm(){const T=F.tgt;
   fSheet(`<div class="mhead"><h3>Daily targets</h3><button class="btn" data-fclose>Close</button></div>
   <div class="fform"><label>Calories<input id="tg-kcal" type="number" inputmode="decimal" min="0" value="${T.kcal}"></label><label>Protein g<input id="tg-p" type="number" inputmode="decimal" min="0" value="${T.p}"></label>
   <label>Fat g<input id="tg-f" type="number" inputmode="decimal" min="0" value="${T.f}"></label><label>Carbs g<input id="tg-c" type="number" inputmode="decimal" min="0" value="${T.c}"></label>
   <label class="full">Water, 500 ml bottles<input id="tg-w" type="number" inputmode="numeric" min="1" max="20" value="${T.w}"></label></div><button class="btn pri" data-ftsave>Save</button>`)}
 
+/* water ring: tap adds a bottle, long-press removes one */
+let wLP=null,wLong=false;
+function water(d1){const d=fDay();if(d1>0)d.w.push(new Date().toISOString());else if(d.w.length)d.w.pop();else return;try{navigator.vibrate?.(d1>0?15:[30,60,30])}catch{}fStore();fTotals()}
+$("#fring").addEventListener("pointerdown",()=>{wLong=false;clearTimeout(wLP);wLP=setTimeout(()=>{wLong=true;water(-1)},550)});
+["pointerup","pointerleave","pointercancel"].forEach(ev=>$("#fring").addEventListener(ev,()=>clearTimeout(wLP)));
+$("#fring").addEventListener("contextmenu",e=>e.preventDefault());
+
 $("#food").addEventListener("click",e=>{const t=e.target;
-  const fw=t.closest("[data-fw]");if(fw){const d=fDay();if(+fw.dataset.fw>0){d.w.push(new Date().toISOString());try{navigator.vibrate?.(15)}catch{}}else d.w.pop();fStore();fTotals();return}
+  if(t.closest("#fring")){if(wLong){wLong=false;return}water(1);return}
   if(t.matches("[data-mchk]")){const id=t.dataset.mchk,m=mealOf(id),d=fDay();if(t.checked)d.m[id]=snap(m);else delete d.m[id];fStore();fRender();return}
   const fx=t.closest("[data-fx]");if(fx){const m=mealOf(fx.dataset.fx);m.items.splice(+fx.dataset.fi,1);afterEdit(m);return}
   const fp=t.closest("[data-fpick]");if(fp){openPicker(fp.dataset.fpick);return}
@@ -683,40 +714,98 @@ $("#food").addEventListener("click",e=>{const t=e.target;
   if(t.id==="fsheet"||t.closest("[data-fclose]")){fSheetClose();return}
   const fa=t.closest("[data-fadd]");if(fa){const m=mealOf(fPickMid);if(m){m.items.push([fa.dataset.fadd,1]);fOpen.add(m.id);afterEdit(m)}fSheetClose();return}
   if(t.closest("[data-fnewfood]")){newFoodForm();return}
-  if(t.closest("[data-fsavefood]")){const v=id=>parseFloat($(id).value),name=$("#nf-name").value.trim(),unit=$("#nf-unit").value.trim()||"serving",nums=["#nf-k","#nf-p","#nf-f","#nf-c"].map(v);
+  if(t.closest("[data-fsavefood]")){const v=id=>parseFloat($(id).value),name=$("#nf-name").value.trim(),unit=$("#nf-unit").value.trim()||"serving",nums=["#nf-k","#nf-p","#nf-f","#nf-c"].map(v),g=v("#nf-g");
     if(!name||nums.some(x=>!(x>=0))){$("#nf-msg").textContent="Fill in the name and all four numbers (0 is fine).";return}
-    const sid="u"+Date.now().toString(36);F.staples[sid]=[name,unit,...nums];const m=mealOf(fPickMid);if(m){m.items.push([sid,1]);fOpen.add(m.id);afterEdit(m)}else fStore();fSheetClose();return}
+    const sid="u"+Date.now().toString(36);F.staples[sid]=[name,unit,...nums,g>0?g:0];const m=mealOf(fPickMid);if(m){m.items.push([sid,1]);fOpen.add(m.id);afterEdit(m)}else fStore();fSheetClose();return}
   if(t.closest("[data-ftsave]")){const g=id=>parseFloat($(id).value);const T={kcal:g("#tg-kcal"),p:g("#tg-p"),f:g("#tg-f"),c:g("#tg-c"),w:Math.round(g("#tg-w"))};
     for(const k in T)if(T[k]>=0&&!(k==="w"&&T[k]<1))F.tgt[k]=T[k];fStore();fTotals();fSheetClose();return}
-  /* meal header: tap a closed meal to open it, double-tap an open one to close it */
-  const mh=t.closest("[data-mh]");if(mh){const id=mh.dataset.mh,now=Date.now();
-    if(!fOpen.has(id)){fOpen.add(id);fTap[id]=0;fRender()}else if(now-(fTap[id]||0)<350){fOpen.delete(id);fTap[id]=0;fRender()}else fTap[id]=now}});
+  /* meal header: tap to open, tap again to close; the checkbox logs it */
+  const mh=t.closest("[data-mh]");if(mh){const id=mh.dataset.mh;fOpen.has(id)?fOpen.delete(id):fOpen.add(id);fRender()}});
 $("#food").addEventListener("change",e=>{const t=e.target;
   if(t.dataset.fq){const m=mealOf(t.dataset.fq),q=parseFloat(t.value);if(m&&q>=0){m.items[+t.dataset.fi][1]=q;afterEdit(m)}else fRender();return}
   if(t.dataset.mname){const m=mealOf(t.dataset.mname),n=t.value.trim();if(m&&n){m.name=n;afterEdit(m)}}});
 $("#food").addEventListener("input",e=>{if(e.target.id==="fsearch")fPickList(e.target.value)});
 $("#food").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.matches("[data-fq],[data-mname]")){e.preventDefault();e.target.blur()}if(e.key==="Escape")fSheetClose()});
 
-/* ---------- swipe between log and food ---------- */
-function foodOpen(){if(foodOn)return;foodOn=true;fRender();$("#food").classList.add("on");$("#food").setAttribute("aria-hidden","false");document.body.classList.add("fopen");try{history.pushState({food:1},"")}catch{}}
-function foodHide(){foodOn=false;$("#food").classList.remove("on");$("#food").setAttribute("aria-hidden","true");document.body.classList.remove("fopen");fSheetClose()}
-function foodClose(){if(history.state&&history.state.food)history.back();else foodHide()}
-window.addEventListener("popstate",()=>{if(foodOn)foodHide()});
+/* ---------- spending page ---------- */
+/* purchase: {d date, t ISO time, sid, price $, amt, unit}. Store units convert to the food's own unit through its grams (or ml) per unit */
+const PU={lb:453.592,oz:28.3495,kg:1000,g:1,"fl oz":29.5735,"half gal":1892.71,gal:3785.41,L:1000,ml:1};
+const money=x=>x==null?"–":x<.1&&x>0?"$"+x.toFixed(3):"$"+x.toFixed(2);
+function unitsOf(sid,amt,unit){const s=stOf(sid);if(unit===s[1]||unit==="each")return amt;if(unit==="dozen")return amt*12;const f=PU[unit];return f&&s[6]>0?amt*f/s[6]:null}
+function priceOf(sid,mode){const P=F.purch.filter(p=>p.sid===sid).map(p=>({p,u:unitsOf(sid,p.amt,p.unit)})).filter(x=>x.u>0);if(!P.length)return null;
+  if((mode||F.pmode)==="avg")return P.reduce((a,x)=>a+x.p.price,0)/P.reduce((a,x)=>a+x.u,0);const L=P[P.length-1];return L.p.price/L.u}
+function mealCost(m){let c=0,miss=0;for(const [sid,q] of m.items){if(!q)continue;const p=priceOf(sid);if(p==null)miss++;else c+=p*q}return {c,miss}}
+const spentSince=d0=>F.purch.filter(p=>p.d>=d0).reduce((a,p)=>a+p.price,0);
+function sRender(){const t=today(),now=toDate(t),wk=new Date(now);wk.setDate(now.getDate()-((now.getDay()+6)%7));const mo=ymd(new Date(now.getFullYear(),now.getMonth(),1));
+  let plan=0,missAny=0;const mrows=F.meals.map(m=>{const {c,miss}=mealCost(m);plan+=c;missAny+=miss;
+    return `<div class="srow2"><div class="nm">${esc(m.name)}${miss?`<small class="miss">${miss} food${miss>1?"s":""} not priced</small>`:""}</div><div class="v">${money(c)}</div></div>`}).join("");
+  const priced=Object.keys(F.staples).filter(sid=>F.purch.some(p=>p.sid===sid)).sort((a,b)=>stOf(a)[0].localeCompare(stOf(b)[0]));
+  const plist=[...F.purch].sort((a,b)=>a.d===b.d?(a.t<b.t?1:-1):(a.d<b.d?1:-1)).slice(0,40);
+  $("#sbody").innerHTML=`<div class="box"><h3>Spent</h3><div class="skpis"><div><b>${money(spentSince(t))}</b><span>Today</span></div><div><b>${money(spentSince(ymd(wk)))}</b><span>This week</span></div><div><b>${money(spentSince(mo))}</b><span>This month</span></div></div></div>
+  <div class="box"><div class="pvbar" style="margin-bottom:4px"><h3 style="flex:1;margin:0">Meal cost</h3><div class="seg" role="group" aria-label="Price basis"><button class="${F.pmode==="latest"?"on":""}" data-pmode="latest">Latest</button><button class="${F.pmode==="avg"?"on":""}" data-pmode="avg">Average</button></div></div>
+    ${mrows}<div class="stot"><span>Plan</span><span>${money(plan)}/day · ${money(plan*7)}/wk · ${money(plan*30.4)}/mo</span></div>${missAny?`<p class="small" style="margin:6px 0 0">Totals leave out foods with no purchase logged yet.</p>`:""}</div>
+  <div class="box"><div class="pvbar" style="margin-bottom:4px"><h3 style="flex:1;margin:0">Purchases</h3><button class="btn pri" data-sadd>+ Add</button></div>
+    ${plist.map(p=>{const s=stOf(p.sid),u=unitsOf(p.sid,p.amt,p.unit),per=p.amt>0?p.price/p.amt:null;
+      return `<div class="srow2"><div class="nm">${esc(s[0])}<small>${fmtDate(p.d)} · ${money(p.price)} for ${p.amt} ${esc(p.unit)} = ${money(per)}/${esc(p.unit)}</small></div><div class="v">${u?money(p.price/u):"–"}<small>per ${esc(s[1])}</small></div><button class="ix" data-sdel="${p.t}" aria-label="Delete purchase">×</button></div>`}).join("")||`<p class="small" style="margin:0">No purchases yet.</p>`}</div>
+  ${priced.length?`<div class="box"><h3>Prices</h3>${priced.map(sid=>{const s=stOf(sid),l=priceOf(sid,"latest"),a=priceOf(sid,"avg"),n=F.purch.filter(p=>p.sid===sid).length;
+    return `<div class="srow2"><div class="nm">${esc(s[0])}<small>per ${esc(s[1])} · ${n} purchase${n>1?"s":""}</small></div><div class="v">${money(l)}<small>latest</small></div><div class="v">${money(a)}<small>avg</small></div></div>`}).join("")}</div>`:""}
+  <button class="btn" data-sconv>Edit conversions</button>`}
+function sSheet(h){$("#ssbody").innerHTML=h;$("#ssheet").hidden=false}
+function sSheetClose(){$("#ssheet").hidden=true}
+function unitOpts(sid,cur){const s=stOf(sid),U=[...new Set([s[1],"lb","oz","kg","g","fl oz","half gal","gal","L","dozen","each"])];return U.map(u=>`<option ${u===cur?"selected":""}>${esc(u)}</option>`).join("")}
+function purchForm(){const S=Object.entries(F.staples).sort((a,b)=>a[1][0].localeCompare(b[1][0])),sid0=S[0][0];
+  sSheet(`<div class="mhead"><h3>Add purchase</h3><button class="btn" data-sclose>Close</button></div>
+  <div class="fform"><label class="full">Food<select id="pf-sid">${S.map(([sid,s])=>`<option value="${sid}">${esc(s[0])}</option>`).join("")}</select></label>
+  <label>Price $<input id="pf-price" type="number" inputmode="decimal" min="0" step="any"></label><label>Date<input id="pf-d" type="date" value="${today()}"></label>
+  <label>Amount<input id="pf-amt" type="number" inputmode="decimal" min="0" step="any"></label><label>Unit<select id="pf-unit">${unitOpts(sid0,"lb")}</select></label>
+  <label class="full" id="pf-glab">Grams per unit<input id="pf-g" type="number" inputmode="decimal" min="0" step="any"></label></div>
+  <p class="sprev" id="pf-prev"></p><button class="btn pri" data-ssave>Save</button>`);pfSync()}
+function pfSync(){const sid=$("#pf-sid").value,s=stOf(sid),unit=$("#pf-unit").value,needG=!!PU[unit]&&unit!==s[1],lab=$("#pf-glab");
+  lab.hidden=!needG;lab.firstChild.textContent=`${/fl oz|gal|L|ml/.test(unit)?"Ml":"Grams"} per ${s[1]}`;if(needG&&document.activeElement!==$("#pf-g"))$("#pf-g").value=s[6]||"";
+  const price=parseFloat($("#pf-price").value),amt=parseFloat($("#pf-amt").value),g=parseFloat($("#pf-g").value);
+  if(!(price>=0&&amt>0)){$("#pf-prev").textContent="";return}
+  const u=unit===s[1]||unit==="each"?amt:unit==="dozen"?amt*12:g>0?amt*PU[unit]/g:null;
+  $("#pf-prev").textContent=`${money(price/amt)}/${unit}`+(u?` · ${money(price/u)} per ${s[1]}`:" · set grams per unit to price it")}
+function convForm(){sSheet(`<div class="mhead"><h3>Conversions</h3><button class="btn" data-sclose>Close</button></div><p class="small" style="margin:0">Grams (or ml for liquids) in 1 unit, as bought. Dry weight for rice, TVP, lentils and oats.</p>
+  <div class="pick">${Object.entries(F.staples).sort((a,b)=>a[1][0].localeCompare(b[1][0])).map(([sid,s])=>`<div class="srow2"><div class="nm">${esc(s[0])}<small>per ${esc(s[1])}</small></div><input style="width:84px" type="number" inputmode="decimal" min="0" step="any" value="${s[6]||""}" data-sconvg="${sid}" aria-label="Grams per ${esc(s[1])} of ${esc(s[0])}"></div>`).join("")}</div>`)}
+$("#spend").addEventListener("click",e=>{const t=e.target;
+  const pm=t.closest("[data-pmode]");if(pm){F.pmode=pm.dataset.pmode;fStore();sRender();return}
+  if(t.closest("[data-sadd]")){purchForm();return}
+  if(t.closest("[data-sconv]")){convForm();return}
+  if(t.id==="ssheet"||t.closest("[data-sclose]")){sSheetClose();sRender();return}
+  const sd=t.closest("[data-sdel]");if(sd){const p=F.purch.find(x=>x.t===sd.dataset.sdel);if(p&&confirm(`Delete ${stOf(p.sid)[0]}, ${money(p.price)}?`)){F.purch=F.purch.filter(x=>x!==p);fStore();sRender()}return}
+  if(t.closest("[data-ssave]")){const sid=$("#pf-sid").value,s=stOf(sid),unit=$("#pf-unit").value,price=parseFloat($("#pf-price").value),amt=parseFloat($("#pf-amt").value),g=parseFloat($("#pf-g").value);
+    if(!(price>=0)||!(amt>0)){$("#pf-prev").textContent="Enter the price and amount.";return}
+    if(PU[unit]&&unit!==s[1]){if(!(g>0)){$("#pf-prev").textContent="Enter grams per "+s[1]+" so this can be priced.";return}s[6]=g}
+    F.purch.push({d:$("#pf-d").value||today(),t:new Date().toISOString(),sid,price,amt,unit});fStore();sSheetClose();sRender()}});
+$("#spend").addEventListener("input",e=>{if(e.target.closest("#ssheet .fform"))pfSync()});
+$("#spend").addEventListener("change",e=>{const t=e.target;
+  if(t.id==="pf-sid"){const s=stOf(t.value);$("#pf-unit").innerHTML=unitOpts(t.value,s[6]?"lb":s[1]);$("#pf-g").value="";pfSync();return}
+  if(t.id==="pf-unit"){$("#pf-g").value="";pfSync();return}
+  if(t.dataset.sconvg){const g=parseFloat(t.value);if(g>=0){F.staples[t.dataset.sconvg][6]=g;fStore()}}});
+$("#spend").addEventListener("keydown",e=>{if(e.key==="Escape"){sSheetClose();sRender()}});
+
+/* ---------- swipe: Log → Food → Spending ---------- */
+function setPage(n,push){const old=page;page=n;if(n>=1&&old<1)fRender();if(n===2)sRender();if(n<2&&old===2)fRender();
+  $("#food").classList.toggle("on",n>=1);$("#spend").classList.toggle("on",n===2);$("#food").setAttribute("aria-hidden",String(n!==1));$("#spend").setAttribute("aria-hidden",String(n!==2));
+  document.body.classList.toggle("fopen",n>0);if(n<1)fSheetClose();if(n<2)sSheetClose();if(push)try{history.pushState({pg:n},"")}catch{}}
+function pageBack(){if(history.state&&history.state.pg===page)history.back();else setPage(page-1)}
+window.addEventListener("popstate",e=>{const n=e.state&&e.state.pg||0;if(n<page)setPage(n)});
 let fsx=null;
 const modalUp=()=>["#modal","#smodal","#emodal"].some(s=>!$(s).hidden);
 document.addEventListener("touchstart",e=>{const el=e.target;fsx=null;if(e.touches.length!==1||el.closest("input,textarea,select,.fsheet,.modal"))return;
   const p=e.touches[0];fsx={x:p.clientX,y:p.clientY,t:Date.now()}},{passive:true});
 document.addEventListener("touchend",e=>{if(!fsx)return;const p=e.changedTouches[0],dx=p.clientX-fsx.x,dy=p.clientY-fsx.y,dt=Date.now()-fsx.t;fsx=null;
   if(dt>700||Math.abs(dx)<70||Math.abs(dx)<Math.abs(dy)*1.8)return;
-  if(dx<0&&!foodOn&&!modalUp())foodOpen();else if(dx>0&&foodOn&&$("#fsheet").hidden)foodClose()},{passive:true});
-/* new day at midnight: the page rolls over on its own */
-setInterval(()=>{if(foodOn&&fDayKey!==today())fRender()},30000);
-document.addEventListener("visibilitychange",()=>{if(!document.hidden&&foodOn&&fDayKey!==today())fRender()});
+  if(dx<0&&page<2&&!modalUp())setPage(page+1,true);else if(dx>0&&page>0)pageBack()},{passive:true});
+/* new day at midnight: pages roll over on their own */
+setInterval(()=>{if(page>0&&fDayKey!==today()){fRender();if(page===2)sRender()}},30000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&page>0&&fDayKey!==today()){fRender();if(page===2)sRender()}});
 
 /* included in Copy / Download data */
-function foodExport(){return {note:"days: date -> m (meals eaten: name, t time checked, items [food, unit, amount, cal, protein g, fat g, carbs g]) and w (ISO time of each 500 ml water). staples: per 1 unit [name, unit, cal, P, F, C]",
-  targets:F.tgt,meals:F.meals,staples:F.staples,days:F.days}}
-function foodImport(d){if(!d||typeof d!=="object")return;if(d.days)F.days=d.days;if(Array.isArray(d.meals))F.meals=d.meals;if(d.staples)F.staples={...ST0,...d.staples};if(d.targets)F.tgt={...TGT0,...d.targets};fStore()}
+function foodExport(){return {note:"days: date -> m (meals eaten: name, t time checked, items [food, unit, amount, cal, protein g, fat g, carbs g]) and w (ISO time of each 500 ml water). staples: per 1 unit [name, unit, cal, P, F, C, grams or ml per unit]. purchases: d date, sid food id, price $, amt, unit",
+  targets:F.tgt,meals:F.meals,staples:F.staples,days:F.days,purchases:F.purch,priceBasis:F.pmode}}
+function foodImport(d){if(!d||typeof d!=="object")return;if(d.days)F.days=d.days;if(Array.isArray(d.meals))F.meals=d.meals;if(d.staples)F.staples={...ST0,...d.staples};if(d.targets)F.tgt={...TGT0,...d.targets};if(Array.isArray(d.purchases))F.purch=d.purchases;fStore()}
 fLoad();
 </script>
 </body>
