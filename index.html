@@ -169,6 +169,13 @@ body.fopen{overflow:hidden}
 .fhead{grid-column:1/-1;display:flex;align-items:center;gap:10px}
 .fhead h1{flex:1}
 .fhead .fdate{font:500 .85rem var(--body);color:var(--soft)}
+.fhead .fdate.past{color:var(--accent)}
+.feel{display:flex;align-items:center;gap:6px;margin-top:8px}
+.feel .fl{font:600 .72rem var(--body);text-transform:uppercase;letter-spacing:.04em;color:var(--soft);margin-right:2px}
+.feel button{flex:1;min-height:36px;border:1.5px solid var(--line);background:var(--field);color:var(--ink);border-radius:8px;font:600 1rem var(--mono);cursor:pointer}
+.feel button.on{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}
+.fnav{background:none;border:1.5px solid var(--line);border-radius:8px;color:var(--ink,inherit);width:34px;height:34px;font:600 1.1rem var(--body);line-height:1;padding:0;cursor:pointer}
+.fnav[hidden]{display:none}
 .fmeals{grid-column:1/-1;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:8px;padding-bottom:4px}
 .meal{background:var(--card);border:1.5px solid var(--line);border-radius:10px;flex:none}
 .meal.done{border-color:var(--go)}
@@ -270,7 +277,7 @@ body.fopen{overflow:hidden}
 </div>
 <section id="food" class="panel" aria-label="Food" aria-hidden="true">
   <div class="fgrid">
-    <div class="fhead"><h1>Food</h1><span class="fdate" id="fdate"></span></div>
+    <div class="fhead"><h1>Food</h1><button class="fnav" id="fprev" data-fprev aria-label="Previous day">&#8249;</button><span class="fdate" id="fdate"></span><button class="fnav" id="fnext" data-fnext aria-label="Next day" hidden>&#8250;</button></div>
     <div class="fmeals" id="fmeals"></div>
     <div class="ftot" id="ftot" data-ftgt role="button" tabindex="0" aria-label="Daily totals. Tap to edit targets"></div>
     <div class="fring" id="fring" role="button" aria-label="Water. Tap to add 500 ml, long-press to remove one"></div>
@@ -301,8 +308,9 @@ const PLAN={
     ["latraise","Dumbbell lateral raise","",5,[12,15],[15,20]],
     ["ohext","Overhead extension","",3,[8,10],[12,15]],
     ["pushdown","Cable pushdown","",3,[10,12],[12,15]],
-    ["crunch","Cable crunch","",3,[10,12],[12,15]],
-    ["chop","Cable woodchop","Sets per side",2,[12,12],[15,15],0,1]],
+    ["abbench","Ab bench crunch","Ankles locked · center pad · weight = plate/dumbbell held",3,[10,12],[12,15]],
+    ["rotation","Kneeling rotation machine","Sets per side",2,[12,12],[15,15],0,1],
+    ["abwheel","Ab wheel rollout","From the knees · slow on the way out",3,[8,12],[8,12]]],
   pull:[
     ["pulldown","Wide-grip lat pulldown","",4,[6,8],[10,12],1],
     ["row","Chest-supported row","Dumbbells on incline bench · elbows tucked",4,[6,8],[10,12],1],
@@ -325,15 +333,15 @@ const PLAN={
     ["tib","Tib raise","Back on wall · weight = added load, 0 if none",2,[15,20],[20,25]],
     ["hlr","Hanging knee raise","Curl hips up · weight = added load",3,[10,12],[12,15]]]
 };
-const FORMS=new Set(["latraise","crunch","chop","pulldown","row","trapraise","inccurl","hammer","finger","revwrist","backext","thrust","hlr"]);
+const FORMS=new Set(["latraise","pulldown","row","trapraise","inccurl","hammer","finger","revwrist","backext","thrust","hlr"]);
 const DAYS=[["pushA","Push A","push","A"],["pullA","Pull A","pull","A"],["legsA","Legs A","legs","A"],["pushB","Push B","push","B"],["pullB","Pull B","pull","B"],["legsB","Legs B","legs","B"]];
 const ALL=Object.values(PLAN).flat(),EX=Object.fromEntries(ALL.map(e=>[e[0],e]));
 /* Smith machine lifts: enter plates per side; saved weight = 2 × plates + bar */
 const SMITH=new Set(["squat","thrust","calf"]);
 /* default weight jump (lb total; dumbbells = per dumbbell; Smith = total, split across sides) */
-const JUMP={incline:10,mchest:10,pecfly:10,latraise:5,ohext:5,pushdown:5,crunch:10,chop:5,pulldown:10,row:5,revfly:5,shrug:5,trapraise:5,inccurl:5,hammer:5,finger:5,revwrist:5,squat:10,backext:5,thrust:10,legcurl:10,legext:10,abduct:10,calf:10,seatcalf:10,tib:0,hlr:5};
+const JUMP={incline:10,mchest:10,pecfly:10,latraise:5,ohext:5,pushdown:5,abbench:5,rotation:10,abwheel:0,pulldown:10,row:5,revfly:5,shrug:5,trapraise:5,inccurl:5,hammer:5,finger:5,revwrist:5,squat:10,backext:5,thrust:10,legcurl:10,legext:10,abduct:10,calf:10,seatcalf:10,tib:0,hlr:5};
 /* starting weights [A, B], used until that day type has data. Smith = per side; dumbbells = per dumbbell */
-const START={incline:[30,20],mchest:[50,40],pecfly:[60,50],latraise:[10,8],ohext:[20,15],pushdown:[25,20],crunch:[50,40],chop:[20,15],
+const START={incline:[30,20],mchest:[50,40],pecfly:[60,50],latraise:[10,8],ohext:[20,15],pushdown:[25,20],abbench:[15,10],rotation:[40,30],abwheel:[0,0],
   pulldown:[80,65],row:[30,25],revfly:[40,30],shrug:[40,35],trapraise:[5,5],inccurl:[15,12],hammer:[20,15],finger:[25,20],revwrist:[10,8],
   squat:[35,25],backext:[10,5],thrust:[45,35],legcurl:[60,50],legext:[60,50],abduct:[80,70],calf:[45,35],seatcalf:[50,35],tib:[0,0],hlr:[0,0]};
 const jumpOf=k=>meta.jump?.[k]??JUMP[k]??5;
@@ -366,14 +374,22 @@ function topHit(x,e,top){const d=doneReps(x);return x.s?d.length>=nBubbles(e)&&d
 function nextDay(){const i=DAYS.findIndex(d=>d[0]===meta.lastDay);return DAYS[(i+1)%DAYS.length][0]}
 function renderDays(){const nx=nextDay();$("#days").innerHTML=DAYS.map(([id,lbl])=>`<button class="day ${id===day&&view==="log"?"on":""}" role="tab" aria-selected="${id===day}" data-day="${id}">${lbl}${id===nx&&id!==day?'<span class="next">Next</span>':""}</button>`).join("")}
 
-function refs(k,v){const t=today(),all=logs[k]||[],todayE=all.find(x=>x.d===t&&x.v===v),past=all.filter(x=>x!==todayE);
+function refs(k,v,nx){const t=today(),all=logs[k]||[],todayE=nx?null:all.find(x=>x.d===t&&x.v===v),past=all.filter(x=>x!==todayE);
   return{todayE,ref:past.filter(x=>x.v===v).pop()||null,any:past[past.length-1]||null}}
 /* today's working state for one exercise */
 /* weight as shown in the box: per side for Smith lifts */
 const shownW=(k,x)=>SMITH.has(k)?(x.p??Math.max(0,(x.w-barW())/2)):x.w;
 /* next session's plan from the last same-day-type session: +1 rep per set that hit its target (up to the top);
    missed sets drop back to what was done; once every set hits the top, weight goes up and reps reset to the bottom */
-function plan(e,v){const k=e[0],range=v==="A"?e[4]:e[5],[bot,top]=range,n=nBubbles(e),{ref}=refs(k,v);
+/* feel (down / = / up on the last session): down drops one jump and holds rep targets; up adds one extra jump on top of normal progression.
+   No-weight lifts (jump 0): down holds reps, up adds 1 extra rep per set */
+function plan(e,v,nx){const P=plan0(e,v,nx),{ref}=refs(e[0],v,nx),f=ref?.f;if(!ref||!f)return P;
+  const k=e[0],[bot,top]=v==="A"?e[4]:e[5],J=jumpOf(k),j=SMITH.has(k)?J/2:J,s0=ref.s||Array(nBubbles(e)).fill(ref.r),tg=ref.tg||s0;
+  if(f<0){if(J>0)return{w:Math.max(0,shownW(k,ref)-j),t:P.t.map((_,i)=>Math.min(top,Math.max(bot,tg[Math.min(i,tg.length-1)]??bot))),bump:0,feel:-1};
+    return{...P,t:P.t.map((_,i)=>{const r=s0[Math.min(i,s0.length-1)];return Math.min(top,Math.max(bot,r??bot))}),feel:-1}}
+  if(J>0)return{w:(+P.w||0)+j,t:Array(P.t.length).fill(bot),bump:P.bump+J,feel:1};
+  return{...P,t:P.t.map(r=>Math.min(top,r+1)),feel:1}}
+function plan0(e,v,nx){const k=e[0],range=v==="A"?e[4]:e[5],[bot,top]=range,n=nBubbles(e),{ref}=refs(k,v,nx);
   if(!ref)return{w:START[k]?.[v==="A"?0:1]??"",t:Array(n).fill(bot),bump:0,start:true};
   const s0=ref.s||Array(n).fill(ref.r),tg=ref.tg||s0,w=shownW(k,ref),tw=topW(ref);
   /* sets done lighter than the heaviest one don't count as reps at the working weight */
@@ -387,15 +403,17 @@ function getCur(e,v){const k=e[0];if(cur[k])return cur[k];
   const rec=recOf(e,v,P);
   if(todayE){const s=todayE.s||Array(nBubbles(e)).fill(todayE.r),tg=todayE.tg||P.t,w0=String(shownW(k,todayE));
     const nx=[...s].reverse().findIndex(r=>r!=null),lastW=todayE.ws&&nx>=0?todayE.ws[s.length-1-nx]:null,dw=lastW!=null?String(lastW):w0;
-    return cur[k]={w:dw,n:todayE.n||"",bump:P.bump,start:P.start,rec,tg,s:s.map((r,i)=>({r:r??(tg[i]??P.t[i]??P.t[P.t.length-1]),done:r!=null,w:r!=null&&todayE.ws?.[i]!=null?String(todayE.ws[i]):r!=null?w0:dw}))}}
-  return cur[k]={w:String(P.w),n:"",bump:P.bump,start:P.start,rec,tg:P.t.slice(),s:P.t.map(r=>({r,done:false,w:String(P.w)}))}}
+    return cur[k]={w:dw,n:todayE.n||"",f:todayE.f||0,fset:todayE.f!=null,bump:P.bump,start:P.start,rec,tg,s:s.map((r,i)=>({r:r??(tg[i]??P.t[i]??P.t[P.t.length-1]),done:r!=null,w:r!=null&&todayE.ws?.[i]!=null?String(todayE.ws[i]):r!=null?w0:dw}))}}
+  return cur[k]={w:String(P.w),n:"",f:0,bump:P.bump,start:P.start,rec,tg:P.t.slice(),s:P.t.map(r=>({r,done:false,w:String(P.w)}))}}
 /* the line under the exercise name: today's suggested weight × reps, from last session and the stall check */
 function recOf(e,v,P){const k=e[0],sm=SMITH.has(k),sided=e[7],[bot,top]=v==="A"?e[4]:e[5];
   const t=sided?P.t.filter((_,i)=>i%2===0):P.t,reps=t.join(", ");
   const w=+P.w||0,wl=w>0?(sm?`${w}/side`:`${w} lb`):(jumpOf(k)>0?"0 lb":"Bodyweight");
   const st=vstatus(k,v);
   if(P.start)return{t:`Start ${wl} × ${bot}${sided?" each side":""}`,tag:"",cls:""};
-  if(P.bump)return{t:`${wl} × ${reps}${sided?" each side":""}`,tag:`Up ${jumpOf(k)} lb`,cls:"up"};
+  if(P.feel<0)return{t:`${wl} × ${reps}${sided?" each side":""}`,tag:jumpOf(k)>0?`Felt hard: down ${jumpOf(k)} lb`:"Felt hard: same reps",cls:"drop"};
+  if(P.feel>0&&jumpOf(k)===0)return{t:`${wl} × ${reps}${sided?" each side":""}`,tag:"Felt easy: +1 rep",cls:"up"};
+  if(P.bump)return{t:`${wl} × ${reps}${sided?" each side":""}`,tag:`Up ${P.bump} lb${P.feel>0?" (felt easy)":""}`,cls:"up"};
   if(st&&st.c==="drop")return{t:`${wl} × ${reps}${sided?" each side":""}`,tag:"Dropping: ~10% off helps",cls:"drop"};
   if(st&&st.c==="stall")return{t:`${wl} × ${reps}${sided?" each side":""}`,tag:`Stalled ${st.n}: beat 1 set`,cls:"stall"};
   return{t:`${wl} × ${reps}${sided?" each side":""}`,tag:"",cls:""}}
@@ -403,7 +421,7 @@ function persist(k){const v=vOf(),c=cur[k],t=today(),arr=(logs[k]||[]).filter(x=
   const d=c.s.filter(x=>x.done).map(x=>x.r);
   if(d.length){const sm=SMITH.has(k),tg=c.s.map((x,i)=>c.tg?.[i]??c.tg?.[c.tg.length-1]??x.r);
     const ws=c.s.map(x=>x.done?(parseFloat(x.w)||0):null),iw=Math.max(...ws.filter(n=>n!=null)),atTop=c.s.filter((x,i)=>x.done&&ws[i]===iw).map(x=>x.r);
-    const en={d:t,v,w:sm?iw*2+barW():iw,r:Math.min(...atTop),n:c.n.trim().slice(0,140),s:c.s.map(x=>x.done?x.r:null),ws,tg};if(sm){en.p=iw;en.bar=barW()}arr.push(en);arr.sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);meta.lastDay=day;meta.at=t}
+    const en={d:t,v,w:sm?iw*2+barW():iw,r:Math.min(...atTop),n:c.n.trim().slice(0,140),s:c.s.map(x=>x.done?x.r:null),ws,tg};if(c.fset)en.f=c.f;if(sm){en.p=iw;en.bar=barW()}arr.push(en);arr.sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);meta.lastDay=day;meta.at=t}
   logs[k]=arr.slice(-400);store()}
 
 function card(e,v){const[k,name,hint,sets,ra,rb,big,sided]=e,range=v==="A"?ra:rb,top=range[1];
@@ -432,6 +450,7 @@ function card(e,v){const[k,name,hint,sets,ra,rb,big,sided]=e,range=v==="A"?ra:rb
       <label for="n-${k}">Note<input class="txt" id="n-${k}" data-f="n" data-k="${k}" type="text" maxlength="140" value="${esc(c.n)}" placeholder="Seat, grip, feel"></label>
     </div>
     <div class="sets">${bubs}</div>
+    <div class="feel" role="group" aria-label="How it felt. Changes next session's suggestion"><span class="fl">Feel</span>${[[-1,"↓","Hard: drop next time"],[0,"=","Normal progression"],[1,"↑","Easy: extra jump next time"]].map(([n,t,l])=>`<button class="${c.fset&&c.f===n?"on":""}" data-feel="${k}" data-fv="${n}" aria-label="${l}" aria-pressed="${c.fset&&c.f===n?"true":"false"}">${t}</button>`).join("")}</div>
     ${ct}
     ${adj}
     ${hist.length?`<details class="hist"><summary>History (${(logs[k]||[]).length})</summary>${hist.map(h=>`<div class="hrow"><span class="d">${fmtDate(h.d)}</span><span class="v">${h.v}</span><span class="m">${wt(h)} × ${fmtSets(h,sided)}${h.n?` · ${esc(h.n)}`:""}</span></div>`).join("")}</details>`:""}
@@ -449,9 +468,14 @@ function renderLog(){const D=DAYS.find(d=>d[0]===day),[,lbl,type,v]=D;
 let wIv=null;
 const hm=ms=>{const m=Math.floor(ms/60000);return m>=60?`${Math.floor(m/60)}:${String(m%60).padStart(2,"0")}`:`${m} min`};
 function avgMin(id){const W=workouts.filter(w=>w.day===id&&w.min>=10);return W.length?Math.round(W.reduce((a,w)=>a+w.min,0)/W.length):null}
+/* what was planned vs done for one session: skipped = no sets logged, short = fewer sets than planned */
+function sessDone(d,id){const D=DAYS.find(x=>x[0]===id);if(!D)return{};const[, ,type,v]=D,planned=PLAN[type].map(e=>e[0]),done=[],skipped=[],short=[];
+  for(const e of PLAN[type]){const x=(logs[e[0]]||[]).find(y=>y.d===d&&y.v===v);if(!x){skipped.push(e[0]);continue}done.push(e[0]);
+    const n=x.s?x.s.filter(r=>r!=null).length:e[3],want=e[7]?e[3]*2:e[3];if(n<want)short.push({k:e[0],sets:n,planned:want})}
+  return{planned,done,skipped,short}}
 function wStart(){if(meta.ws)return;meta.ws={t:Date.now(),day,asked:false};store();wDraw()}
 function wEnd(){const ws=meta.ws;if(!ws)return;const end=Date.now(),min=Math.max(1,Math.round((end-ws.t)/60000));
-  if(min>=10)workouts.push({d:ymd(new Date(ws.t)),day:ws.day,start:new Date(ws.t).toISOString(),end:new Date(end).toISOString(),min});workouts=workouts.slice(-500);
+  if(min>=10)workouts.push({d:ymd(new Date(ws.t)),day:ws.day,start:new Date(ws.t).toISOString(),end:new Date(end).toISOString(),min,...sessDone(ymd(new Date(ws.t)),ws.day)});workouts=workouts.slice(-500);
   meta.ws=null;meta.lastW={d:today(),end,min};store();$("#emodal").hidden=true;wDraw();if(view==="log")renderLog();$("#status").textContent=min>=10?`Workout saved: ${min} min.`:"Workout under 10 minutes, not saved."}
 function wDraw(){const ws=meta.ws,bar=$("#wbar");bar.classList.toggle("on",!!ws);$("#wgo").textContent=ws?"End workout":"Start workout";
   clearInterval(wIv);
@@ -536,10 +560,16 @@ function bigChart(k){const S=sessions(k);if(S.length<2)return `<p class="small">
   return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Progress chart">${grid}${path}${dots}${xl}</svg>
     <div class="legend"><span><i style="background:var(--accent)"></i>A (heavy)</span><span><i style="background:var(--b)"></i>B (reps)</span><span>${unitOf(k)}, weakest set</span></div>`}
 function dump(){return JSON.stringify({app:"ppl-log",v:2,exported:new Date().toISOString(),lastDay:meta.lastDay||null,
-  note:"Each entry: d date, v day type, w heaviest set weight lb, r reps on weakest set at that weight, s reps per set (null = not done; woodchop alternates L,R), ws weight per set as entered (per side on Smith), n note",
+  note:"Each entry: d date, v day type, w heaviest set weight lb, r reps on weakest set at that weight, s reps per set (null = not done; per-side lifts alternate L,R), ws weight per set as entered (per side on Smith), n note",
   workoutsNote:"Each workout: d date, day, start/end ISO times, min duration",
   smithNote:"Smith lifts: w = total incl. bar, p = plates per side, bar = bar weight. tg = rep targets per set",
-  plan:Object.fromEntries(ALL.map(e=>[e[0],{name:e[1],sets:e[3],A:e[4],B:e[5],perSide:!!e[7],jump:jumpOf(e[0]),smith:SMITH.has(e[0])}])),logs,workouts,food:typeof foodExport==="function"?foodExport():undefined})}
+  feelNote:"f on an entry = feel button: -1 hard (next session drops one jump), 0 normal, 1 easy (extra jump). Missing = not pressed",
+  nextNote:"next: the app's suggestion for the next A and B session of each lift. w = weight as entered (per side on Smith), reps per set, bump = lb added, feel = feel that shaped it",
+  sessionsNote:"sessions: per workout, exercises planned, done, skipped (no sets logged) and short (fewer sets than planned)",
+  plan:Object.fromEntries(ALL.map(e=>[e[0],{name:e[1],sets:e[3],A:e[4],B:e[5],perSide:!!e[7],jump:jumpOf(e[0]),smith:SMITH.has(e[0])}])),
+  next:Object.fromEntries(ALL.map(e=>[e[0],Object.fromEntries(["A","B"].map(v=>{const P=plan(e,v,true);return[v,{w:P.w===""?null:+P.w,reps:P.t,bump:P.bump||0,feel:P.feel||0,first:!!P.start}]}))])),
+  sessions:workouts.map(w=>({d:w.d,day:w.day,min:w.min,...(w.planned?{planned:w.planned,done:w.done,skipped:w.skipped,short:w.short}:sessDone(w.d,w.day))})),
+  planHistory:meta.planHist||[],logs,workouts,food:typeof foodExport==="function"?foodExport():undefined})}
 function renderProg(){const dates=new Set(Object.values(logs).flat().map(x=>x.d));
   const cut=ymd(new Date(Date.now()-28*864e5)),recentDays=[...dates].filter(d=>d>cut).length,lastD=[...dates].sort().pop();
   const st=ALL.map(e=>({e,s:status(e[0])})),flags=st.filter(x=>x.s.c==="stall"||x.s.c==="drop");
@@ -576,6 +606,7 @@ document.addEventListener("click",async e=>{
       if(c.s.every(s=>s.done)){openEx.delete(k);sel=null;if(CT.k===k)ctStop()}else ctStart(k)}
     else if(isSel){x.done=false;x.w=c.w;sel=null}else sel={k,i,w:true};
     persist(k);tPreset(EX[k]);renderLog();wCheckDone();return}
+  const fb=e.target.closest("[data-feel]");if(fb){const k=fb.dataset.feel,c=cur[k],n=+fb.dataset.fv;if(c.fset&&c.f===n){c.f=0;c.fset=false}else{c.f=n;c.fset=true}if(c.s.some(x=>x.done))persist(k);renderLog();return}
   const op=e.target.closest("[data-open]");if(op){openEx.add(op.dataset.open);renderLog();return}
   const cb=e.target.closest("[data-ct]");if(cb){const a=cb.dataset.ct;if(a==="x"){ctStop();renderLog()}else ctAdj(+a);return}
   const ad=e.target.closest("[data-adj]");if(ad&&sel){const x=cur[sel.k].s[sel.i];x.r=Math.max(0,Math.min(99,x.r+ +ad.dataset.adj));persist(sel.k);renderLog();return}
@@ -601,7 +632,7 @@ document.addEventListener("click",async e=>{
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){$("#modal").hidden=true;$("#smodal").hidden=true}if(e.key==="Enter"&&e.target.dataset?.k){e.preventDefault();e.target.blur()}if((e.key==="Enter"||e.key===" ")&&e.target.dataset?.ex){e.preventDefault();e.target.click()}});
 document.addEventListener("change",e=>{const t=e.target;if(t.id==="sclock"){meta.showClock=t.checked;store();wDraw()}
   if(t.id==="sbar"){const b=parseFloat(t.value);if(b>=0){meta.bar=b;store();cur={};if(view==="log")renderLog()}}
-  if(t.dataset?.jump){const j=parseFloat(t.value);if(j>=0){meta.jump=meta.jump||{};meta.jump[t.dataset.jump]=j;store();cur={};if(view==="log")renderLog()}}});
+  if(t.dataset?.jump){const j=parseFloat(t.value);if(j>=0){meta.jump=meta.jump||{};meta.jump[t.dataset.jump]=j;store();planTrack("Weight jump edited in settings");cur={};if(view==="log")renderLog()}}});
 document.addEventListener("input",e=>{const el=e.target,k=el.dataset.k;if(!k||!cur[k])return;const c=cur[k];
   if(el.dataset.f==="w"){if(sel&&sel.k===k&&sel.w&&c.s[sel.i])c.s[sel.i].w=el.value;else{c.w=el.value;c.s.forEach(x=>{if(!x.done)x.w=el.value})}}
   else c[el.dataset.f]=el.value;
@@ -615,7 +646,17 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();promptEv=e;
 $("#install").addEventListener("click",async()=>{if(!promptEv)return;promptEv.prompt();await promptEv.userChoice.catch(()=>{});promptEv=null;$("#install").hidden=true});
 if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
 
-load();day=meta.at===today()&&meta.lastDay?meta.lastDay:nextDay();render();tDraw();wDraw();
+/* ---------- plan change history: any change to exercises, sets, rep ranges or jumps gets a dated entry ---------- */
+const planSnap=()=>Object.fromEntries(Object.entries(PLAN).map(([t,L])=>[t,L.map(e=>({k:e[0],name:e[1],sets:e[3],A:e[4],B:e[5],jump:jumpOf(e[0])}))]));
+function planTrack(why){const now=planSnap(),old=meta.planSnap;
+  if(!old){meta.planHist=[{d:today(),at:new Date().toISOString(),why:"Push day abs: cable crunch → ab bench crunch, cable woodchop → kneeling rotation machine, added ab wheel rollout 3×8–12",
+      removed:["crunch","chop"],added:["abbench","rotation","abwheel"],changed:[],plan:now}];meta.planSnap=now;store();return}
+  const flat=o=>Object.fromEntries(Object.entries(o).flatMap(([t,L])=>L.map(x=>[x.k,{...x,day:t}]))),A=flat(old),B=flat(now),changed=[];
+  for(const k in B)if(A[k]){const f=["day","name","sets","A","B","jump"].filter(n=>JSON.stringify(A[k][n])!==JSON.stringify(B[k][n]));if(f.length)changed.push({k,fields:Object.fromEntries(f.map(n=>[n,{from:A[k][n],to:B[k][n]}]))})}
+  const added=Object.keys(B).filter(k=>!A[k]),removed=Object.keys(A).filter(k=>!B[k]);
+  if(!added.length&&!removed.length&&!changed.length)return;
+  (meta.planHist=meta.planHist||[]).push({d:today(),at:new Date().toISOString(),why:why||"App update",added,removed,changed});meta.planHist=meta.planHist.slice(-200);meta.planSnap=now;store()}
+load();planTrack();day=meta.at===today()&&meta.lastDay?meta.lastDay:nextDay();render();tDraw();wDraw();
 
 /* ---------- food page ---------- */
 /* staples: id -> [name, unit, cal, protein g, fat g, carbs g, grams (or ml) per unit as bought]. Hidden list; meals reference these, so any edit recalculates */
@@ -629,32 +670,42 @@ const ST0={
   cabbage:["Cabbage, cooked","cup",34,1.9,0.1,8,150],oil:["Olive oil","tsp",40,0,4.5,0,4.9],lentil:["Lentils, dry","cup",680,48,2,115,192],
   carrot:["Carrot","medium",25,0.6,0.1,6,61],spinach:["Spinach, frozen","cup",45,5,0.7,7,150],d3:["Vitamin D3","pill",0,0,0,0,0],
   tuna:["Tuna","can",170,37,1.5,0,142],rice:["White rice, cooked","cup",205,4.3,0.4,45,53],broccoli:["Broccoli","cup",31,2.6,0.3,6,91],
-  bread:["Whole grain bread","slice",80,4,1,14,43]};
+  bread:["Whole grain bread","slice",80,4,1,14,43],tomato:["Tomato","medium",22,1.1,0.2,4.8,123],
+  onion:["Onion","medium",44,1.2,0.1,10.3,110],garlic:["Garlic","clove",4.5,0.2,0,1,3]};
 const MEALS0=[
   {id:"eggs",name:"Eggs",items:[["egg",4]]},
   {id:"smoothie",name:"Smoothie",items:[["banana",1],["silk",.5],["pb",1],["cocoa",1],["creatine",5]]},
-  {id:"tvpbowl",name:"TVP bowl",items:[["tvp",.5],["soy",1]]},
+  {id:"tvpbowl",name:"TVP bowl",items:[["tvp",.5],["soy",1],["tomato",1],["onion",.5],["garlic",2]]},
   {id:"oats",name:"Overnight oats",items:[["oats",.5],["silk",.5],["cinn",.5],["vanilla",.25],["salt",.125]]},
   {id:"banana",name:"Banana",items:[["banana",1]]},
   {id:"fish",name:"Fish plate",items:[["sardine",1],["sweetpot",1],["cabbage",1],["oil",1],["d3",1]]},
-  {id:"dinner",name:"Dinner",items:[["lentil",.25],["tvp",.75],["egg",3],["cabbage",2],["carrot",1],["spinach",.5],["oil",1],["salt",.25]]}];
+  {id:"dinner",name:"Dinner",items:[["lentil",.25],["tvp",.5],["egg",3],["cabbage",2],["carrot",1],["broccoli",.5],["tomato",1],["onion",.5],["garlic",2],["oil",1],["salt",.25]]}];
 /* water: 7 × 500 ml = 3.5 L. ~3 L from drinks covers the 3.7 L daily total-water intake for men (about a fifth comes from food), plus ~0.5 L for 90 min of lifting */
 const TGT0={kcal:2135,p:169,f:72,c:209,w:7};
-let F={},page=0,fOpen=new Set(),fDayKey=null,fPickMid=null;
+let F={},page=0,fOpen=new Set(),fDayKey=null,fPickMid=null,fView=null;
+/* day shown on the Food page: today unless the back arrow stepped to an earlier day */
+const fKey=()=>fView&&fView<today()?fView:today();
+const fShift=n=>{const d=toDate(fKey());d.setDate(d.getDate()+n);const k=ymd(d);fView=k<today()?k:null;fRender()};
 const r1=x=>Math.round(x*10)/10;
 function fLoad(){try{F=JSON.parse(localStorage.getItem(FLS)||"{}")||{}}catch{F={}}
   const st=F.staples||{};for(const k in st)if(st[k].length<7)st[k][6]=ST0[k]?ST0[k][6]:0;
   F.staples={...ST0,...st};if(!Array.isArray(F.meals))F.meals=JSON.parse(JSON.stringify(MEALS0));
-  F.tgt={...TGT0,...(F.tgt||{})};F.days=F.days||{};F.purch=Array.isArray(F.purch)?F.purch:[];F.pmode=F.pmode==="avg"?"avg":"latest"}
+  F.tgt={...TGT0,...(F.tgt||{})};fMigrate();F.days=F.days||{};F.purch=Array.isArray(F.purch)?F.purch:[];F.pmode=F.pmode==="avg"?"avg":"latest"}
+/* one-time fixes to meals already saved on the phone; past days' logs are left as they were */
+function fMigrate(){if((F.mig|0)>=1)return;const m=id=>F.meals.find(x=>x.id===id),has=(M,sid)=>M.items.some(i=>i[0]===sid),add=(M,sid,q)=>{if(!has(M,sid))M.items.push([sid,q])};
+  const d=m("dinner");if(d){const t=d.items.find(i=>i[0]==="tvp");if(t)t[1]=.5;const sp=d.items.find(i=>i[0]==="spinach");if(sp)sp[0]="broccoli";else add(d,"broccoli",.5)}
+  for(const M of [m("tvpbowl"),d])if(M){add(M,"tomato",1);add(M,"onion",.5);add(M,"garlic",2)}
+  const D=F.days?.[today()];if(D)for(const M of [m("tvpbowl"),d])if(M&&D.m?.[M.id])D.m[M.id]=snap(M,D.m[M.id].t);
+  F.mig=1;fStore()}
 function fStore(){try{localStorage.setItem(FLS,JSON.stringify(F))}catch{}}
 const stOf=sid=>F.staples[sid]||["Unknown food","",0,0,0,0,0];
 const mac=(sid,q)=>{const s=stOf(sid);return [s[2]*q,s[3]*q,s[4]*q,s[5]*q]};
 const sumItems=items=>items.reduce((a,[sid,q])=>{const m=mac(sid,q);return a.map((v,i)=>v+m[i])},[0,0,0,0]);
 const mealOf=id=>F.meals.find(m=>m.id===id);
-function fDay(){const t=today();return F.days[t]||(F.days[t]={m:{},w:[]})}
+function fDay(){const t=fKey();return F.days[t]||(F.days[t]={m:{},w:[]})}
 /* logged meal: {name, t ISO time checked, items:[[food, unit, amount, cal, P, F, C]]} so history stands on its own */
 function snap(m,t){return {name:m.name,t:t||new Date().toISOString(),items:m.items.map(([sid,q])=>{const s=stOf(sid);return [s[0],s[1],q,...mac(sid,q).map(r1)]})}}
-function afterEdit(m){const d=F.days[today()];if(d&&d.m[m.id])d.m[m.id]=snap(m,d.m[m.id].t);fStore();fRender()}
+function afterEdit(m){const d=F.days[fKey()];if(d&&d.m[m.id])d.m[m.id]=snap(m,d.m[m.id].t);fStore();fRender()}
 
 const CHEV=`<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>`;
 function itemHtml(mid,[sid,q],i){const s=stOf(sid),[k,p]=mac(sid,q);
@@ -667,14 +718,15 @@ function mealHtml(m,done){const [k,p]=sumItems(m.items),open=fOpen.has(m.id);
 function ringSvg(n,t){const R=27,C=2*Math.PI*R,seg=C/t,gap=t>1?3:0,hit=n>=t;let s="";
   for(let i=0;i<t;i++)s+=`<circle cx="36" cy="36" r="${R}" fill="none" stroke="${i<n?(hit?"var(--go)":"var(--accent)"):"var(--line)"}" stroke-width="8" stroke-dasharray="${(seg-gap).toFixed(2)} ${(C-seg+gap).toFixed(2)}" transform="rotate(${(-90+i*360/t).toFixed(2)} 36 36)"/>`;
   return `<svg viewBox="0 0 72 72" role="img" aria-label="${n} of ${t} bottles">${s}<text x="36" y="41" text-anchor="middle">${n}/${t}</text></svg><small>+500 ml</small>`}
-function fTotals(){const dd=F.days[today()]||{m:{},w:[]},sum=[0,0,0,0],T=F.tgt;
+function fTotals(){const dd=F.days[fKey()]||{m:{},w:[]},sum=[0,0,0,0],T=F.tgt;
   Object.values(dd.m).forEach(s=>s.items.forEach(x=>{for(let i=0;i<4;i++)sum[i]+=x[3+i]}));
   $("#ftot").innerHTML=[["Cal",sum[0],T.kcal,"",1],["Protein",sum[1],T.p,"g",0],["Fat",sum[2],T.f,"g",1],["Carbs",sum[3],T.c,"g",1]].map(([l,v,t,u,cap])=>{
     const pct=t?v/t:0,cls=cap&&pct>1.05?"over":pct>=.95?"hit":"";
     return `<div class="tr ${cls}"><b>${l}</b><div class="tbar"><i style="width:${Math.min(100,pct*100).toFixed(1)}%"></i></div><span>${Math.round(v).toLocaleString()}/${Math.round(t).toLocaleString()}${u}</span></div>`}).join("");
   const n=dd.w.length;$("#fring").innerHTML=ringSvg(n,Math.max(1,F.tgt.w|0));$("#fring").classList.toggle("hit",n>=F.tgt.w)}
-function fRender(){fDayKey=today();const dd=F.days[fDayKey]||{m:{},w:[]},box=$("#fmeals"),top=box.scrollTop;
-  $("#fdate").textContent=toDate(fDayKey).toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
+function fRender(){fDayKey=today();const vk=fKey(),dd=F.days[vk]||{m:{},w:[]},box=$("#fmeals"),top=box.scrollTop;
+  $("#fnext").hidden=vk===fDayKey;$("#fdate").classList.toggle("past",vk!==fDayKey);
+  $("#fdate").textContent=toDate(vk).toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
   box.innerHTML=F.meals.map(m=>mealHtml(m,!!dd.m[m.id])).join("")+`<button class="fadd" data-fnew>+ Add meal</button>`;box.scrollTop=top;fTotals()}
 
 function fSheet(h){$("#fsbody").innerHTML=h;$("#fsheet").hidden=false}
@@ -705,6 +757,8 @@ $("#fring").addEventListener("contextmenu",e=>e.preventDefault());
 
 $("#food").addEventListener("click",e=>{const t=e.target;
   if(t.closest("#fring")){if(wLong){wLong=false;return}water(1);return}
+  if(t.closest("[data-fprev]")){fShift(-1);return}
+  if(t.closest("[data-fnext]")){fShift(1);return}
   if(t.matches("[data-mchk]")){const id=t.dataset.mchk,m=mealOf(id),d=fDay();if(t.checked)d.m[id]=snap(m);else delete d.m[id];fStore();fRender();return}
   const fx=t.closest("[data-fx]");if(fx){const m=mealOf(fx.dataset.fx);m.items.splice(+fx.dataset.fi,1);afterEdit(m);return}
   const fp=t.closest("[data-fpick]");if(fp){openPicker(fp.dataset.fpick);return}
@@ -788,7 +842,7 @@ $("#spend").addEventListener("keydown",e=>{if(e.key==="Escape"){sSheetClose();sR
 /* ---------- swipe: Log → Food → Spending ---------- */
 function setPage(n,push){const old=page;page=n;if(n>=1&&old<1)fRender();if(n===2)sRender();if(n<2&&old===2)fRender();
   $("#food").classList.toggle("on",n>=1);$("#spend").classList.toggle("on",n===2);$("#food").setAttribute("aria-hidden",String(n!==1));$("#spend").setAttribute("aria-hidden",String(n!==2));
-  document.body.classList.toggle("fopen",n>0);if(n<1)fSheetClose();if(n<2)sSheetClose();if(push)try{history.pushState({pg:n},"")}catch{}}
+  document.body.classList.toggle("fopen",n>0);if(n<1){fSheetClose();fView=null}if(n<2)sSheetClose();if(push)try{history.pushState({pg:n},"")}catch{}}
 function pageBack(){if(history.state&&history.state.pg===page)history.back();else setPage(page-1)}
 window.addEventListener("popstate",e=>{const n=e.state&&e.state.pg||0;if(n<page)setPage(n)});
 let fsx=null;
