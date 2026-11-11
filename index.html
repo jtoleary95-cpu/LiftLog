@@ -592,6 +592,13 @@ function renderProg(){const dates=new Set(Object.values(logs).flat().map(x=>x.d)
 
 function render(){renderDays();$("#logview").hidden=view!=="log";$("#progview").hidden=view!=="prog";if(view==="log")renderLog();else renderProg()}
 
+/* last set: card stays open 5 s; any edit on it (reps, weight, note, feel, bubble) restarts the 5 s */
+const CL={};
+function armClose(k){clearTimeout(CL[k]);openEx.add(k);CL[k]=setTimeout(()=>{delete CL[k];const c=cur[k];
+  if(!c||!c.s.length||!c.s.every(s=>s.done))return;
+  if(document.activeElement?.dataset?.k===k){armClose(k);return}
+  openEx.delete(k);if(sel&&sel.k===k)sel=null;if(view==="log")renderLog()},5000)}
+function holdClose(k){if(CL[k])armClose(k)}
 /* ---------- events ---------- */
 let taps=0,tapT=null;
 $("#title").addEventListener("click",()=>{taps++;clearTimeout(tapT);tapT=setTimeout(()=>taps=0,1500);if(taps>=5){taps=0;view="prog";focusEx=null;render();window.scrollTo({top:0})}});
@@ -603,13 +610,13 @@ document.addEventListener("click",async e=>{
     const c=cur[k];
     if(!x.done){try{T.ac=T.ac||new (window.AudioContext||window.webkitAudioContext)();T.ac.resume?.()}catch{}
       x.done=true;x.w=c.w;sel={k,i,w:false};if(!meta.ws)wStart();else if(meta.ws.day!==day){meta.ws.day=day;store()}
-      if(c.s.every(s=>s.done)){openEx.delete(k);sel=null;if(CT.k===k)ctStop()}else ctStart(k)}
-    else if(isSel){x.done=false;x.w=c.w;sel=null}else sel={k,i,w:true};
+      if(c.s.every(s=>s.done)){armClose(k);if(CT.k===k)ctStop()}else ctStart(k)}
+    else if(isSel){x.done=false;x.w=c.w;sel=null;clearTimeout(CL[k]);delete CL[k]}else{sel={k,i,w:true};holdClose(k)}
     persist(k);tPreset(EX[k]);renderLog();wCheckDone();return}
-  const fb=e.target.closest("[data-feel]");if(fb){const k=fb.dataset.feel,c=cur[k],n=+fb.dataset.fv;if(c.fset&&c.f===n){c.f=0;c.fset=false}else{c.f=n;c.fset=true}if(c.s.some(x=>x.done))persist(k);renderLog();return}
+  const fb=e.target.closest("[data-feel]");if(fb){const k=fb.dataset.feel,c=cur[k],n=+fb.dataset.fv;if(c.fset&&c.f===n){c.f=0;c.fset=false}else{c.f=n;c.fset=true}holdClose(k);if(c.s.some(x=>x.done))persist(k);renderLog();return}
   const op=e.target.closest("[data-open]");if(op){openEx.add(op.dataset.open);renderLog();return}
   const cb=e.target.closest("[data-ct]");if(cb){const a=cb.dataset.ct;if(a==="x"){ctStop();renderLog()}else ctAdj(+a);return}
-  const ad=e.target.closest("[data-adj]");if(ad&&sel){const x=cur[sel.k].s[sel.i];x.r=Math.max(0,Math.min(99,x.r+ +ad.dataset.adj));persist(sel.k);renderLog();return}
+  const ad=e.target.closest("[data-adj]");if(ad&&sel){const x=cur[sel.k].s[sel.i];x.r=Math.max(0,Math.min(99,x.r+ +ad.dataset.adj));holdClose(sel.k);persist(sel.k);renderLog();return}
   const as=e.target.closest("[data-addset]");if(as){const k=as.dataset.addset,c=cur[k],n=EX[k][7]?2:1;for(let j=0;j<n;j++){const p=c.s[c.s.length-n]||c.s[c.s.length-1];c.s.push({r:p?p.r:10,done:false,w:c.w})}persist(k);renderLog();return}
   const ds=e.target.closest("[data-dropset]");if(ds){const k=ds.dataset.dropset,c=cur[k],n=EX[k][7]?2:1;if(c.s.length>n){c.s.splice(-n,n);if(sel&&sel.k===k&&sel.i>=c.s.length)sel=null;persist(k);renderLog()}return}
   const fm=e.target.closest("[data-form]");if(fm){openForm(fm.dataset.form);return}
@@ -636,7 +643,7 @@ document.addEventListener("change",e=>{const t=e.target;if(t.id==="sclock"){meta
 document.addEventListener("input",e=>{const el=e.target,k=el.dataset.k;if(!k||!cur[k])return;const c=cur[k];
   if(el.dataset.f==="w"){if(sel&&sel.k===k&&sel.w&&c.s[sel.i])c.s[sel.i].w=el.value;else{c.w=el.value;c.s.forEach(x=>{if(!x.done)x.w=el.value})}}
   else c[el.dataset.f]=el.value;
-  if(c.s.some(x=>x.done))persist(k)});
+  holdClose(k);if(c.s.some(x=>x.done))persist(k)});
 /* redraw bubble weight labels after a weight edit, without stealing focus mid-typing */
 document.addEventListener("change",e=>{if(e.target.dataset?.f==="w"&&view==="log")renderLog()});
 
