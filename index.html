@@ -110,7 +110,7 @@ details.hist summary::-webkit-details-marker{display:none}
 .hrow .d,.hrow .v{color:var(--soft);font-family:var(--mono);font-size:.8rem}
 .hrow .m{min-width:0;overflow-wrap:anywhere}
 .rules{margin-top:22px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:.9rem}
-.rules h2{font:700 1.1rem var(--display);letter-spacing:.03em;text-transform:uppercase;margin:0 0 6px}
+.rules summary{cursor:pointer;list-style:none;font:700 1.1rem var(--display);letter-spacing:.03em;text-transform:uppercase}.rules summary::-webkit-details-marker{display:none}.rules summary::after{content:" ▾";color:var(--soft)}.rules[open] summary{margin-bottom:6px}.rules h2{font:700 1.1rem var(--display);letter-spacing:.03em;text-transform:uppercase;margin:0 0 6px}
 .rules p{margin:4px 0;color:var(--soft)}.rules b{color:var(--ink)}
 
 /* form viewer */
@@ -260,18 +260,21 @@ body.fopen{overflow:hidden}
   <main id="logview">
     <p class="status" id="status" role="status"></p>
     <div class="list" id="list"></div>
-    <section class="rules">
-      <h2>How to run it</h2>
+    <details class="rules">
+      <summary>How to run it</summary>
       <p><b>Sets:</b> tap a bubble when you finish a set. Tap a checked bubble to select it, then use − / + if you missed or beat the reps. Tap a selected bubble to uncheck it. Sets − / + under the target adds or drops a set. Everything saves as you go.</p>
       <p><b>Weight per set:</b> the weight box sets the weight for the sets you haven't done yet, so change it before a set if you go up or down. To fix a set you already did, tap its bubble, then change the box. When weights differ, each bubble shows its weight. Progression goes off your heaviest set.</p>
       <p><b>Workout time:</b> Start workout at the top, or it starts itself when you check your first set. End it when you're done; you'll get a prompt once every set is checked.</p>
-      <p><b>Progression:</b> each set's target is last time's reps +1, up to the top of the range. Miss a set and it drops back to what you did. When every set hits the top, the weight goes up by that lift's jump and reps reset to the bottom. You can always change the weight box; jump sizes and the Smith bar weight are in Settings.</p>
-      <p><b>First time on a lift:</b> it starts at a suggested weight. If set 1 beats the top of the range by 2+, go up one jump; if you can't reach the bottom, drop one.</p>
+      <p><b>A and B days:</b> each card only uses that day type's history. Push B looks at your last Push B, never Push A.</p>
+      <p><b>Reps:</b> each set's target is last time's reps +1, up to the top of the range. Miss a set and it drops back to what you did.</p>
+      <p><b>Weight:</b> when every set hits the top, the app works out your estimated max (average of Epley and Brzycki) and suggests the weight you can do for the bottom of the range. Use the closest setting the machine has.</p>
+      <p><b>Sets:</b> stalled means no new best in 3 sessions of that day type. A stall adds 1 set, up to 4. Stalled at 4 sets: the progress screen suggests a swap.</p>
+      <p><b>First session of a day type:</b> the start weight comes from your estimated max if the lift has any history, otherwise a default.</p>
       <p><b>Smith lifts:</b> enter the plates on one side. The bar is added for you.</p>
       <p><b>Effort:</b> stop most sets 1–2 reps short of failure; take the last set of each exercise to failure.</p>
       <p><b>Rest:</b> a rest timer starts on the card when you check a set, except the last set of an exercise: 2:30 on the big lifts, 1:30 on everything else; −15 / +15 to change it. Checking the last set minimizes the exercise; tap it to open it again. The clock at the top still works by hand.</p>
-      <p><b>Deload:</b> every 6–8 weeks, cut the sets in half for a week.</p>
-    </section>
+      <p><b>Deload:</b> when 3 or more lifts are stalled or dropping, the app flags a deload week: same weights, half the sets.</p>
+    </details>
   </main>
   <main id="progview" hidden></main>
 </div>
@@ -344,6 +347,19 @@ const JUMP={incline:10,mchest:10,pecfly:10,latraise:5,ohext:5,pushdown:5,abbench
 const START={incline:[30,20],mchest:[50,40],pecfly:[60,50],latraise:[10,8],ohext:[20,15],pushdown:[25,20],abbench:[15,10],rotation:[40,30],abwheel:[0,0],
   pulldown:[80,65],row:[30,25],revfly:[40,30],shrug:[40,35],trapraise:[5,5],inccurl:[15,12],hammer:[20,15],finger:[25,20],revwrist:[10,8],
   squat:[35,25],backext:[10,5],thrust:[45,35],legcurl:[60,50],legext:[60,50],abduct:[80,70],calf:[45,35],seatcalf:[50,35],tib:[0,0],hlr:[0,0]};
+/* muscles worked: 1 = main mover, 0.5 = helper (fractional set counting, Pelland 2025) */
+const MUSN={chest:"Chest",fdelt:"Front delts",sdelt:"Side delts",rdelt:"Rear delts",tri:"Triceps",back:"Lats / mid back",traps:"Traps",bi:"Biceps",fore:"Forearms",abs:"Abs",quads:"Quads",glutes:"Glutes",hams:"Hamstrings",lowback:"Lower back",calves:"Calves",shins:"Shins"};
+const MUS={incline:{chest:1,fdelt:.5,tri:.5},mchest:{chest:1,fdelt:.5,tri:.5},pecfly:{chest:1},latraise:{sdelt:1},ohext:{tri:1},pushdown:{tri:1},abbench:{abs:1},rotation:{abs:1},abwheel:{abs:1},
+  pulldown:{back:1,bi:.5},row:{back:1,bi:.5,rdelt:.5},revfly:{rdelt:1,traps:.5},shrug:{traps:1},trapraise:{traps:1,rdelt:.5},inccurl:{bi:1},hammer:{bi:1,fore:.5},finger:{fore:1},revwrist:{fore:1},
+  squat:{quads:1,glutes:.5},backext:{lowback:1,glutes:.5,hams:.5},thrust:{glutes:1,hams:.5},legcurl:{hams:1},legext:{quads:1},abduct:{glutes:1},calf:{calves:1},seatcalf:{calves:1},tib:{shins:1},hlr:{abs:1}};
+/* swap ideas that hit the same muscle, shown when a lift is stalled at 4 sets */
+const ALT={incline:["incline dumbbell press","Smith incline press"],mchest:["flat dumbbell press","Smith bench press"],pecfly:["cable fly","dumbbell fly"],latraise:["cable lateral raise","machine lateral raise"],
+  ohext:["cable overhead extension","skull crusher"],pushdown:["rope pushdown","dip machine"],abbench:["cable crunch","machine crunch"],rotation:["Pallof press","cable woodchop"],abwheel:["stability ball rollout","body saw plank"],
+  pulldown:["close-grip pulldown","assisted pull-up"],row:["seated cable row","machine row"],revfly:["face pull","rear delt machine"],shrug:["Smith shrug","cable shrug"],trapraise:["cable Y raise","face pull"],
+  inccurl:["preacher curl","cable curl"],hammer:["rope cable curl","cross-body hammer curl"],finger:["dead hang","plate pinch hold"],revwrist:["cable reverse curl","EZ-bar reverse curl"],
+  squat:["leg press","hack squat"],backext:["45° back extension bench","dumbbell Romanian deadlift"],thrust:["glute bridge machine","cable pull-through"],legcurl:["lying leg curl","dumbbell Romanian deadlift"],
+  legext:["leg press, feet low","Bulgarian split squat"],abduct:["cable hip abduction","banded side walk"],calf:["leg press calf raise","single-leg dumbbell calf raise"],seatcalf:["Smith seated calf raise","leg press calf raise"],
+  tib:["seated dumbbell tib raise","band dorsiflexion"],hlr:["captain's chair knee raise","reverse crunch"]};
 const jumpOf=k=>meta.jump?.[k]??JUMP[k]??5;
 const barW=()=>meta.bar??20;
 
@@ -379,49 +395,62 @@ function refs(k,v,nx){const t=today(),all=logs[k]||[],todayE=nx?null:all.find(x=
 /* today's working state for one exercise */
 /* weight as shown in the box: per side for Smith lifts */
 const shownW=(k,x)=>SMITH.has(k)?(x.p??Math.max(0,(x.w-barW())/2)):x.w;
-/* next session's plan from the last same-day-type session: +1 rep per set that hit its target (up to the top);
-   missed sets drop back to what was done; once every set hits the top, weight goes up and reps reset to the bottom */
-/* feel (down / = / up on the last session): down drops one jump and holds rep targets; up adds one extra jump on top of normal progression.
-   No-weight lifts (jump 0): down holds reps, up adds 1 extra rep per set */
-function plan(e,v,nx){const P=plan0(e,v,nx),{ref}=refs(e[0],v,nx),f=ref?.f;if(!ref||!f)return P;
-  const k=e[0],[bot,top]=v==="A"?e[4]:e[5],J=jumpOf(k),j=SMITH.has(k)?J/2:J,s0=ref.s||Array(nBubbles(e)).fill(ref.r),tg=ref.tg||s0;
-  if(f<0){if(J>0)return{w:Math.max(0,shownW(k,ref)-j),t:P.t.map((_,i)=>Math.min(top,Math.max(bot,tg[Math.min(i,tg.length-1)]??bot))),bump:0,feel:-1};
-    return{...P,t:P.t.map((_,i)=>{const r=s0[Math.min(i,s0.length-1)];return Math.min(top,Math.max(bot,r??bot))}),feel:-1}}
-  if(J>0)return{w:(+P.w||0)+j,t:Array(P.t.length).fill(bot),bump:P.bump+J,feel:1};
-  return{...P,t:P.t.map(r=>Math.min(top,r+1)),feel:1}}
-function plan0(e,v,nx){const k=e[0],range=v==="A"?e[4]:e[5],[bot,top]=range,n=nBubbles(e),{ref}=refs(k,v,nx);
-  if(!ref)return{w:START[k]?.[v==="A"?0:1]??"",t:Array(n).fill(bot),bump:0,start:true};
-  const s0=ref.s||Array(n).fill(ref.r),tg=ref.tg||s0,w=shownW(k,ref),tw=topW(ref);
+/* ---------- strength math ---------- */
+/* estimated 1RM = average of Epley and Brzycki (Brzycki capped at 36 reps) */
+const f1=r=>((1+r/30)+36/(37-Math.min(r,36)))/2;
+const e1=(w,r)=>w*f1(r);
+const wFor=(rm,r)=>rm/f1(r);
+const CAP=4; /* +1 set on a stall, up to 4 sets per exercise */
+const r25=x=>Math.round(x/2.5)*2.5;
+const totalFromShown=(k,w)=>SMITH.has(k)?w*2+barW():w;
+const shownFromTotal=(k,T)=>SMITH.has(k)?(T-barW())/2:T;
+/* best estimated 1RM in one logged session, sets at the working weight only */
+function sessRM(x){if(!(x.w>0))return 0;const tw=topW(x);
+  const reps=x.s?x.s.filter((r,i)=>r!=null&&(tw==null||x.ws?.[i]==null||x.ws[i]===tw)):[x.r];return Math.max(0,...reps.map(r=>e1(x.w,r)))}
+/* weight for `reps` after doing w for r: from estimated 1RM, rounded to 2.5, always above w */
+function upW(k,w,r,reps){if(!(w>0))return jumpOf(k)||2.5;let n=r25(shownFromTotal(k,wFor(e1(totalFromShown(k,w),r),reps)));if(n<=w)n=Math.floor(w/2.5)*2.5+2.5;return n}
+const nSetsOf=(e,x)=>x?.s?(e[7]?x.s.length/2:x.s.length):e[3];
+/* next session's plan from the last session of the same day type (A or B only).
+   Double progression: +1 rep per set that hit its target, up to the top. Missed sets drop back to what was done.
+   When every set hits the top, the weight goes up to what your estimated 1RM says you can do for the bottom of the range.
+   Stalled (no new best in 3 sessions of that day type): +1 set, up to 4; stalled at the cap: swap suggestion. */
+function plan(e,v,nx){const k=e[0],[bot,top]=v==="A"?e[4]:e[5],sd=e[7]?2:1,{todayE,ref}=refs(k,v,nx);
+  if(!ref){const past=(logs[k]||[]).filter(x=>x!==todayE).slice(-3),rm=past.length?Math.max(...past.map(sessRM)):0;
+    let w=START[k]?.[v==="A"?0:1]??"",est=false;
+    if(rm>0&&jumpOf(k)>0){w=Math.max(0,Math.floor(shownFromTotal(k,wFor(rm,bot))/2.5)*2.5);est=true}
+    return{w,t:Array(e[3]*sd).fill(bot),bump:0,start:true,est}}
+  const capN=Math.max(CAP,e[3]),n0=nSetsOf(e,ref),st=vstatus(k,v);let n=Math.min(Math.max(e[3],n0),capN),addSet=false,capped=false;
+  if(st&&st.c==="stall"){if(n<capN){n++;addSet=true}else capped=true}
+  const nb=n*sd,nb0=n0*sd,s0=ref.s||Array(nb0).fill(ref.r),tg=ref.tg||s0,w=shownW(k,ref),tw=topW(ref);
   /* sets done lighter than the heaviest one don't count as reps at the working weight */
   const light=i=>tw!=null&&ref.ws?.[i]!=null&&ref.ws[i]<tw,s=s0.map((r,i)=>light(i)?null:r),mixed=s0.some((r,i)=>r!=null&&light(i));
-  if(!mixed&&s.length>=n&&s.slice(0,n).every(r=>r!=null&&r>=top)&&jumpOf(k)>0){const j=SMITH.has(k)?jumpOf(k)/2:jumpOf(k);return{w:w+j,t:Array(n).fill(bot),bump:jumpOf(k)}}
-  const t=Array.from({length:n},(_,i)=>{const r=s[Math.min(i,s.length-1)],g=tg[Math.min(i,tg.length-1)]??bot;
+  if(!mixed&&s.length>=nb0&&s.slice(0,nb0).every(r=>r!=null&&r>=top)&&jumpOf(k)>0){const nw=upW(k,w,top,bot);return{w:nw,t:Array(nb).fill(bot),bump:+(nw-w).toFixed(2),addSet,capped}}
+  const t=Array.from({length:nb},(_,i)=>{const j=Math.min(i,s.length-1),r=s[j],g=tg[Math.min(i,tg.length-1)]??bot;
     if(r==null)return Math.min(top,Math.max(bot,g));return r>=g?Math.min(top,Math.max(bot,r+1)):r});
-  return{w,t,bump:0}}
+  return{w,t,bump:0,addSet,capped}}
 function getCur(e,v){const k=e[0];if(cur[k])return cur[k];
   const{todayE}=refs(k,v),P=plan(e,v);
   const rec=recOf(e,v,P);
   if(todayE){const s=todayE.s||Array(nBubbles(e)).fill(todayE.r),tg=todayE.tg||P.t,w0=String(shownW(k,todayE));
     const nx=[...s].reverse().findIndex(r=>r!=null),lastW=todayE.ws&&nx>=0?todayE.ws[s.length-1-nx]:null,dw=lastW!=null?String(lastW):w0;
-    return cur[k]={w:dw,n:todayE.n||"",f:todayE.f||0,fset:todayE.f!=null,bump:P.bump,start:P.start,rec,tg,s:s.map((r,i)=>({r:r??(tg[i]??P.t[i]??P.t[P.t.length-1]),done:r!=null,w:r!=null&&todayE.ws?.[i]!=null?String(todayE.ws[i]):r!=null?w0:dw}))}}
-  return cur[k]={w:String(P.w),n:"",f:0,bump:P.bump,start:P.start,rec,tg:P.t.slice(),s:P.t.map(r=>({r,done:false,w:String(P.w)}))}}
-/* the line under the exercise name: today's suggested weight × reps, from last session and the stall check */
-function recOf(e,v,P){const k=e[0],sm=SMITH.has(k),sided=e[7],[bot,top]=v==="A"?e[4]:e[5];
+    return cur[k]={w:dw,n:todayE.n||"",bump:P.bump,start:P.start,rec,tg,s:s.map((r,i)=>({r:r??(tg[i]??P.t[i]??P.t[P.t.length-1]),done:r!=null,w:r!=null&&todayE.ws?.[i]!=null?String(todayE.ws[i]):r!=null?w0:dw}))}}
+  return cur[k]={w:String(P.w),n:"",bump:P.bump,start:P.start,rec,tg:P.t.slice(),s:P.t.map(r=>({r,done:false,w:String(P.w)}))}}
+/* the line under the exercise name: today's suggested weight × reps, and why */
+function recOf(e,v,P){const k=e[0],sm=SMITH.has(k),sided=e[7],[bot]=v==="A"?e[4]:e[5];
   const t=sided?P.t.filter((_,i)=>i%2===0):P.t,reps=t.join(", ");
-  const w=+P.w||0,wl=w>0?(sm?`${w}/side`:`${w} lb`):(jumpOf(k)>0?"0 lb":"Bodyweight");
+  const w=+P.w||0,wl=w>0?(sm?`${w}/side`:`${w} lb`):(jumpOf(k)>0?"0 lb":"Bodyweight"),line=`${wl} × ${reps}${sided?" each side":""}`;
   const st=vstatus(k,v);
-  if(P.start)return{t:`Start ${wl} × ${bot}${sided?" each side":""}`,tag:"",cls:""};
-  if(P.feel<0)return{t:`${wl} × ${reps}${sided?" each side":""}`,tag:jumpOf(k)>0?`Felt hard: down ${jumpOf(k)} lb`:"Felt hard: same reps",cls:"drop"};
-  if(P.feel>0&&jumpOf(k)===0)return{t:`${wl} × ${reps}${sided?" each side":""}`,tag:"Felt easy: +1 rep",cls:"up"};
-  if(P.bump)return{t:`${wl} × ${reps}${sided?" each side":""}`,tag:`Up ${P.bump} lb${P.feel>0?" (felt easy)":""}`,cls:"up"};
-  if(st&&st.c==="drop")return{t:`${wl} × ${reps}${sided?" each side":""}`,tag:"Dropping: ~10% off helps",cls:"drop"};
-  if(st&&st.c==="stall")return{t:`${wl} × ${reps}${sided?" each side":""}`,tag:`Stalled ${st.n}: beat 1 set`,cls:"stall"};
-  return{t:`${wl} × ${reps}${sided?" each side":""}`,tag:"",cls:""}}
+  if(P.start)return{t:`Start ${wl} × ${bot}${sided?" each side":""}`,tag:P.est?"From your est. max":"",cls:""};
+  if(P.bump)return{t:line,tag:`Up ${P.bump} lb${sm?"/side":""} · closest setting`,cls:"up"};
+  if(st&&st.c==="drop")return{t:line,tag:"Dropping: ~10% off helps",cls:"drop"};
+  if(P.capped)return{t:line,tag:`Stalled at ${CAP} sets: try a swap`,cls:"stall"};
+  if(P.addSet)return{t:line,tag:`Stalled ${st.n}: +1 set`,cls:"stall"};
+  return{t:line,tag:"",cls:""}}
 function persist(k){const v=vOf(),c=cur[k],t=today(),arr=(logs[k]||[]).filter(x=>!(x.d===t&&x.v===v));
   const d=c.s.filter(x=>x.done).map(x=>x.r);
   if(d.length){const sm=SMITH.has(k),tg=c.s.map((x,i)=>c.tg?.[i]??c.tg?.[c.tg.length-1]??x.r);
     const ws=c.s.map(x=>x.done?(parseFloat(x.w)||0):null),iw=Math.max(...ws.filter(n=>n!=null)),atTop=c.s.filter((x,i)=>x.done&&ws[i]===iw).map(x=>x.r);
-    const en={d:t,v,w:sm?iw*2+barW():iw,r:Math.min(...atTop),n:c.n.trim().slice(0,140),s:c.s.map(x=>x.done?x.r:null),ws,tg};if(c.fset)en.f=c.f;if(sm){en.p=iw;en.bar=barW()}arr.push(en);arr.sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);meta.lastDay=day;meta.at=t}
+    const en={d:t,v,w:sm?iw*2+barW():iw,r:Math.min(...atTop),n:c.n.trim().slice(0,140),s:c.s.map(x=>x.done?x.r:null),ws,tg};if(sm){en.p=iw;en.bar=barW()}arr.push(en);arr.sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);meta.lastDay=day;meta.at=t}
   logs[k]=arr.slice(-400);store()}
 
 function card(e,v){const[k,name,hint,sets,ra,rb,big,sided]=e,range=v==="A"?ra:rb,top=range[1];
@@ -431,8 +460,7 @@ function card(e,v){const[k,name,hint,sets,ra,rb,big,sided]=e,range=v==="A"?ra:rb
   const sm=SMITH.has(k),wt=x=>sm?`${shownW(k,x)}/side (${x.w} lb)`:`${x.w} lb`,up=c.bump>0,rr=range[0]===range[1]?`${range[0]}`:`${range[0]}–${range[1]}`;
   let last;
   if(ref)last=`<span>Last ${v}:</span><span class="num">${wt(ref)} × ${fmtSets(ref,sided)}</span><span>${fmtDate(ref.d)}</span>`;
-  else if(any)last=`<span>Last (${any.v}):</span><span class="num">${wt(any)} × ${fmtSets(any,sided)}</span><span>${fmtDate(any.d)}</span><span class="pill first">First ${v} session</span>`;
-  else last=`<span class="pill first">No history yet</span>`;
+  else last=`<span class="pill first">First ${v} session</span>`;
   const vary=new Set(c.s.map(x=>parseFloat(x.w)||0)).size>1;
   const bubs=c.s.map((x,i)=>{const lab=sided?`${i%2?"R":"L"}${(i>>1)+1}`:`Set ${i+1}`,isSel=sel&&sel.k===k&&sel.i===i;
     return `<button class="bub ${x.done?"done":""} ${isSel?"sel":""}" data-bub="${k}" data-i="${i}" aria-pressed="${x.done}" aria-label="${lab}, ${esc(x.w)} lb, ${x.r} reps${x.done?", done":""}">${vary?`<span class="sl wv">${esc(x.w)}</span>`:`<span class="sl">${sided?lab:i+1}</span>`}<span class="sr">${x.r}</span></button>`}).join("");
@@ -450,7 +478,6 @@ function card(e,v){const[k,name,hint,sets,ra,rb,big,sided]=e,range=v==="A"?ra:rb
       <label for="n-${k}">Note<input class="txt" id="n-${k}" data-f="n" data-k="${k}" type="text" maxlength="140" value="${esc(c.n)}" placeholder="Seat, grip, feel"></label>
     </div>
     <div class="sets">${bubs}</div>
-    <div class="feel" role="group" aria-label="How it felt. Changes next session's suggestion"><span class="fl">Feel</span>${[[-1,"↓","Hard: drop next time"],[0,"=","Normal progression"],[1,"↑","Easy: extra jump next time"]].map(([n,t,l])=>`<button class="${c.fset&&c.f===n?"on":""}" data-feel="${k}" data-fv="${n}" aria-label="${l}" aria-pressed="${c.fset&&c.f===n?"true":"false"}">${t}</button>`).join("")}</div>
     ${ct}
     ${adj}
     ${hist.length?`<details class="hist"><summary>History (${(logs[k]||[]).length})</summary>${hist.map(h=>`<div class="hrow"><span class="d">${fmtDate(h.d)}</span><span class="v">${h.v}</span><span class="m">${wt(h)} × ${fmtSets(h,sided)}${h.n?` · ${esc(h.n)}`:""}</span></div>`).join("")}</details>`:""}
@@ -461,7 +488,7 @@ function renderLog(){const D=DAYS.find(d=>d[0]===day),[,lbl,type,v]=D;
   $("#list").innerHTML=PLAN[type].map(e=>card(e,v)).join("");
   if(f){const el=document.getElementById(f);if(el){el.focus({preventScroll:true});try{if(selPos!=null)el.setSelectionRange(selPos,selPos)}catch{}}}
   const t=today(),started=PLAN[type].filter(e=>(logs[e[0]]||[]).some(x=>x.d===t&&x.v===v)).length,full=PLAN[type].filter(e=>cur[e[0]]?.s.every(x=>x.done)).length;
-  const av=avgMin(day);$("#status").innerHTML=storageOk?`<span><b>${lbl}</b> · ${full} of ${PLAN[type].length} done${started>full?` · ${started-full} in progress`:""}${av?` · avg ${av} min`:""}</span>`:"This browser is blocking storage, so entries won't be kept. Open the app from your home screen or turn off private browsing."}
+  const av=avgMin(day);$("#status").innerHTML=storageOk?`<span><b>${lbl}</b> · ${full} of ${PLAN[type].length} done${started>full?` · ${started-full} in progress`:""}${av?` · avg ${av} min`:""}</span>${flagged().length>=3?`<br><b>Deload week:</b> ${flagged().length} lifts stalled or dropping. Same weights, half the sets.`:""}`:"This browser is blocking storage, so entries won't be kept. Open the app from your home screen or turn off private browsing."}
 
 /* ---------- workout session: start/end, auto-start on first set, prompt when all done ---------- */
 /* workouts: {d date, day, start ISO, end ISO, min} ; meta.ws = active {t start ms, day, asked} */
@@ -492,8 +519,7 @@ function renderSettings(){const avg=DAYS.map(([id,lbl])=>{const a=avgMin(id),n=w
   <p class="small" id="dlmsg" role="status" style="margin:0"></p>
   <div class="srow"><label for="sbar" style="font:500 1rem var(--body);text-transform:none;letter-spacing:0;color:var(--ink)">Smith bar weight (lb)</label><input id="sbar" type="number" inputmode="decimal" min="0" step="0.5" value="${barW()}" style="width:90px"></div>
   <div class="srow" style="display:block"><div style="font-weight:600;margin-bottom:4px">Average workout time</div>${avg}</div>
-  <details class="srow" style="display:block"><summary style="font-weight:600;cursor:pointer">Weight jumps (lb)</summary><p class="small" style="margin:6px 0">How much the weight goes up once every set hits the top of the range. Dumbbells are per dumbbell; Smith lifts are the total, split across both sides.</p>
-  ${ALL.map(e=>`<div class="avgrow" style="align-items:center"><span>${esc(e[1])}</span><input data-jump="${e[0]}" type="number" inputmode="decimal" min="0" step="2.5" value="${jumpOf(e[0])}" style="width:80px;min-height:36px;padding:4px 8px"></div>`).join("")}</details>`}
+`}
 function download(){const txt=dump(),name=`liftlog-${today()}.json`,blob=new Blob([txt],{type:"application/json"});
   try{const a=document.createElement("a"),u=URL.createObjectURL(blob);a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);
     meta.backup=today();store();const m=$("#dlmsg");if(m)m.textContent=`Saved ${name} to Downloads.`}
@@ -533,8 +559,8 @@ async function openForm(k){$("#mtitle").textContent=EX[k][1];$("#mbody").innerHT
   $("#mbody").innerHTML=m&&m[k]?`<img src="${m[k]}" alt="${esc(EX[k][1])} form">`:`<p class="mmsg">Couldn't load the form GIFs. They need a connection the first time.</p>`}
 
 /* ---------- progress (hidden: tap the title 5 times) ---------- */
-// Strength score: estimated one-rep max (Epley) on the weakest set, or reps when no weight is used.
-const score=x=>x.w>0?x.w*(1+x.r/30):x.r;
+// Strength score: estimated one-rep max (avg of Epley and Brzycki) on the weakest set, or reps when no weight is used.
+const score=x=>x.w>0?e1(x.w,x.r):x.r;
 const unitOf=k=>(logs[k]||[]).some(x=>x.w>0)?"lb e1RM":"reps";
 function sessions(k,v){const by={};for(const x of logs[k]||[]){if(v&&x.v!==v)continue;const key=x.d+x.v,s=score(x);if(!by[key]||s>by[key].s)by[key]={d:x.d,s,x}}return Object.values(by).sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0)}
 /* judged separately for A and B days, since heavy and high-rep days score differently */
@@ -563,13 +589,20 @@ function dump(){return JSON.stringify({app:"ppl-log",v:2,exported:new Date().toI
   note:"Each entry: d date, v day type, w heaviest set weight lb, r reps on weakest set at that weight, s reps per set (null = not done; per-side lifts alternate L,R), ws weight per set as entered (per side on Smith), n note",
   workoutsNote:"Each workout: d date, day, start/end ISO times, min duration",
   smithNote:"Smith lifts: w = total incl. bar, p = plates per side, bar = bar weight. tg = rep targets per set",
-  feelNote:"f on an entry = feel button: -1 hard (next session drops one jump), 0 normal, 1 easy (extra jump). Missing = not pressed",
-  nextNote:"next: the app's suggestion for the next A and B session of each lift. w = weight as entered (per side on Smith), reps per set, bump = lb added, feel = feel that shaped it",
+  e1rmNote:"Estimated 1RM = average of Epley w*(1+r/30) and Brzycki w*36/(37-r). Weight increases come from that estimate for the bottom of the rep range. f on old entries = retired feel buttons",
+  nextNote:"next: the app's suggestion for the next A and B session of each lift. w = weight as entered (per side on Smith), reps per set, bump = lb added, addSet = +1 set from a stall, capped = stalled at 4 sets",
   sessionsNote:"sessions: per workout, exercises planned, done, skipped (no sets logged) and short (fewer sets than planned)",
   plan:Object.fromEntries(ALL.map(e=>[e[0],{name:e[1],sets:e[3],A:e[4],B:e[5],perSide:!!e[7],jump:jumpOf(e[0]),smith:SMITH.has(e[0])}])),
-  next:Object.fromEntries(ALL.map(e=>[e[0],Object.fromEntries(["A","B"].map(v=>{const P=plan(e,v,true);return[v,{w:P.w===""?null:+P.w,reps:P.t,bump:P.bump||0,feel:P.feel||0,first:!!P.start}]}))])),
+  next:Object.fromEntries(ALL.map(e=>[e[0],Object.fromEntries(["A","B"].map(v=>{const P=plan(e,v,true);return[v,{w:P.w===""?null:+P.w,reps:P.t,bump:P.bump||0,addSet:!!P.addSet,capped:!!P.capped,first:!!P.start}]}))])),
   sessions:workouts.map(w=>({d:w.d,day:w.day,min:w.min,...(w.planned?{planned:w.planned,done:w.done,skipped:w.skipped,short:w.short}:sessDone(w.d,w.day))})),
-  planHistory:meta.planHist||[],logs,workouts,food:typeof foodExport==="function"?foodExport():undefined})}
+  planHistory:meta.planHist||[],muscleSets:weekSets(),logs,workouts,food:typeof foodExport==="function"?foodExport():undefined})}
+/* hard sets per muscle over the last 7 days, and the most in one workout */
+function weekSets(){const cut=ymd(new Date(Date.now()-7*864e5)),wk={},sess={};
+  for(const k in logs){const e=EX[k];if(!e||!MUS[k])continue;for(const x of logs[k]){if(x.d<=cut)continue;const n=(x.s?x.s.filter(r=>r!=null).length:e[3])/(e[7]?2:1);
+    for(const[m,f]of Object.entries(MUS[k])){wk[m]=(wk[m]||0)+n*f;const sk=x.d+"|"+m;sess[sk]=(sess[sk]||0)+n*f}}}
+  const peak={};for(const sk in sess){const m=sk.split("|")[1];peak[m]=Math.max(peak[m]||0,sess[sk])}
+  return Object.keys(MUSN).map(m=>({m,name:MUSN[m],week:+(wk[m]||0).toFixed(1),bestSession:+(peak[m]||0).toFixed(1)}))}
+const flagged=()=>ALL.filter(e=>{const s=status(e[0]);return s.c==="stall"||s.c==="drop"});
 function renderProg(){const dates=new Set(Object.values(logs).flat().map(x=>x.d));
   const cut=ymd(new Date(Date.now()-28*864e5)),recentDays=[...dates].filter(d=>d>cut).length,lastD=[...dates].sort().pop();
   const st=ALL.map(e=>({e,s:status(e[0])})),flags=st.filter(x=>x.s.c==="stall"||x.s.c==="drop");
@@ -577,8 +610,12 @@ function renderProg(){const dates=new Set(Object.values(logs).flat().map(x=>x.d)
   let h=`<div class="pvbar"><h2>Progress</h2><button class="btn" data-act="back">Back to log</button></div>
   <div class="box kpis"><div class="kpi"><b>${recentDays}</b><span>sessions, last 28 days (plan: 24)</span></div><div class="kpi"><b>${st.filter(x=>x.s.c==="ok").length}</b><span>lifts progressing</span></div><div class="kpi"><b>${flags.length}</b><span>stalled or dropping</span></div></div>`;
   h+=`<div class="box"><h3>Watch list</h3>${flags.length?flags.map(x=>`<p class="flag"><span class="st ${x.s.c}">${x.s.t}</span> <b>${esc(x.e[1])}</b>: ${x.s.why}.</p>`).join(""):`<p class="small">Nothing stalled or dropping.${st.some(x=>x.s.c==="new")?" Lifts need 4 logged sessions before they're judged.":""}</p>`}
+    ${ALL.flatMap(e=>["A","B"].filter(v=>plan(e,v,true).capped).map(v=>`<p class="flag"><span class="st stall">Swap</span> <b>${esc(e[1])}</b> (${v}): stalled at ${CAP} sets. Try ${ALT[e[0]][0]} or ${ALT[e[0]][1]}.</p>`)).join("")}
+    ${flags.length>=3?`<p class="flag"><span class="st drop">Deload</span> ${flags.length} lifts stalled or dropping. A deload week can help: same weights, half the sets.</p>`:""}
     ${gap!=null&&gap>=4?`<p class="flag"><span class="st drop">Gap</span> ${gap} days since your last session.</p>`:""}
-    <p class="small">Each lift is scored as an estimated one-rep max on its weakest set, judged separately on A and B days. Stalled means no new best in the last 3 sessions of that day type. During a calorie cut, holding steady is a good result.</p></div>`;
+    <p class="small">Each lift is scored as an estimated one-rep max (average of Epley and Brzycki) on its weakest set, judged separately on A and B days. Stalled means no new best in the last 3 sessions of that day type. During a calorie cut, holding steady is a good result.</p></div>`;
+  h+=`<div class="box"><h3>Sets per muscle, last 7 days</h3><p class="small" style="margin:0 0 4px">Main mover = 1 set, helper = ½. Target 10–20 hard sets a week; more than ~10 in one workout adds little.</p>${weekSets().map(x=>{const c=x.week<10?"stall":x.week>20?"drop":"ok",t=x.week<10?"Under":x.week>20?"High":"In range";
+    return `<div class="avgrow"><span>${x.name}${x.bestSession>10?` <span class="st stall">${x.bestSession} in 1 workout</span>`:""}</span><span>${x.week} <span class="st ${c}">${t}</span></span></div>`}).join("")}</div>`;
   if(focusEx&&EX[focusEx]){const e=EX[focusEx],s=status(focusEx);
     h+=`<div class="box"><h3>${esc(e[1])}</h3><p class="flag"><span class="st ${s.c}">${s.t}</span> ${s.why}.</p>${bigChart(focusEx)}</div>`}
   for(const t of ["push","pull","legs"])h+=`<div class="box"><h3>${t}</h3>${PLAN[t].map(e=>{const s=status(e[0]),c=change4w(e[0]),S=sessions(e[0]),last=S[S.length-1];
@@ -613,7 +650,7 @@ document.addEventListener("click",async e=>{
       if(c.s.every(s=>s.done)){armClose(k);if(CT.k===k)ctStop()}else ctStart(k)}
     else if(isSel){x.done=false;x.w=c.w;sel=null;clearTimeout(CL[k]);delete CL[k]}else{sel={k,i,w:true};holdClose(k)}
     persist(k);tPreset(EX[k]);renderLog();wCheckDone();return}
-  const fb=e.target.closest("[data-feel]");if(fb){const k=fb.dataset.feel,c=cur[k],n=+fb.dataset.fv;if(c.fset&&c.f===n){c.f=0;c.fset=false}else{c.f=n;c.fset=true}holdClose(k);if(c.s.some(x=>x.done))persist(k);renderLog();return}
+  const fb=null;if(fb){const k=fb.dataset.feel,c=cur[k],n=+fb.dataset.fv;if(c.fset&&c.f===n){c.f=0;c.fset=false}else{c.f=n;c.fset=true}holdClose(k);if(c.s.some(x=>x.done))persist(k);renderLog();return}
   const op=e.target.closest("[data-open]");if(op){openEx.add(op.dataset.open);renderLog();return}
   const cb=e.target.closest("[data-ct]");if(cb){const a=cb.dataset.ct;if(a==="x"){ctStop();renderLog()}else ctAdj(+a);return}
   const ad=e.target.closest("[data-adj]");if(ad&&sel){const x=cur[sel.k].s[sel.i];x.r=Math.max(0,Math.min(99,x.r+ +ad.dataset.adj));holdClose(sel.k);persist(sel.k);renderLog();return}
@@ -697,18 +734,25 @@ const r1=x=>Math.round(x*10)/10;
 function fLoad(){try{F=JSON.parse(localStorage.getItem(FLS)||"{}")||{}}catch{F={}}
   const st=F.staples||{};for(const k in st)if(st[k].length<7)st[k][6]=ST0[k]?ST0[k][6]:0;
   F.staples={...ST0,...st};if(!Array.isArray(F.meals))F.meals=JSON.parse(JSON.stringify(MEALS0));
-  F.tgt={...TGT0,...(F.tgt||{})};fMigrate();F.days=F.days||{};F.purch=Array.isArray(F.purch)?F.purch:[];F.pmode=F.pmode==="avg"?"avg":"latest"}
+  F.tgt={...TGT0,...(F.tgt||{})};fMigrate();F.days=F.days||{};F.purch=Array.isArray(F.purch)?F.purch:[];F.pmode=F.pmode==="avg"?"avg":"latest";fMigrate2()}
 /* one-time fixes to meals already saved on the phone; past days' logs are left as they were */
 function fMigrate(){if((F.mig|0)>=1)return;const m=id=>F.meals.find(x=>x.id===id),has=(M,sid)=>M.items.some(i=>i[0]===sid),add=(M,sid,q)=>{if(!has(M,sid))M.items.push([sid,q])};
   const d=m("dinner");if(d){const t=d.items.find(i=>i[0]==="tvp");if(t)t[1]=.5;const sp=d.items.find(i=>i[0]==="spinach");if(sp)sp[0]="broccoli";else add(d,"broccoli",.5)}
   for(const M of [m("tvpbowl"),d])if(M){add(M,"tomato",1);add(M,"onion",.5);add(M,"garlic",2)}
   const D=F.days?.[today()];if(D)for(const M of [m("tvpbowl"),d])if(M&&D.m?.[M.id])D.m[M.id]=snap(M,D.m[M.id].t);
   F.mig=1;fStore()}
+function fMigrate2(){if((F.mig|0)>=2)return;const keep=new Set(MEALS0.map(m=>m.id)),gone=F.meals.filter(m=>!keep.has(m.id)&&/^m[0-9a-z]+$/.test(m.id));
+  for(const m of gone)for(const d of Object.values(F.days||{}))if(d.m?.[m.id]){d.x=d.x||[];if(!d.x.some(x=>x.id===m.id))d.x.push(JSON.parse(JSON.stringify(m)))}
+  F.meals=F.meals.filter(m=>!gone.includes(m));F.mig=2;fStore()}
 function fStore(){try{localStorage.setItem(FLS,JSON.stringify(F))}catch{}}
 const stOf=sid=>F.staples[sid]||["Unknown food","",0,0,0,0,0];
 const mac=(sid,q)=>{const s=stOf(sid);return [s[2]*q,s[3]*q,s[4]*q,s[5]*q]};
 const sumItems=items=>items.reduce((a,[sid,q])=>{const m=mac(sid,q);return a.map((v,i)=>v+m[i])},[0,0,0,0]);
 const mealOf=id=>F.meals.find(m=>m.id===id);
+/* a day can hold: x = meals added just for that day, o = that day's edits to regular meals. Both clear at midnight */
+function mealView(id){const d=F.days[fKey()],x=d?.x?.find(m=>m.id===id);if(x)return x;const b=mealOf(id),o=d?.o?.[id];if(!b)return null;return o?{id,name:o.name,items:o.items}:b}
+function mealEdit(id){const d=fDay(),x=(d.x||[]).find(m=>m.id===id);if(x)return x;const b=mealOf(id);if(!b)return null;d.o=d.o||{};
+  if(!d.o[id])d.o[id]={name:b.name,items:JSON.parse(JSON.stringify(b.items))};const o=d.o[id];return{id,get name(){return o.name},set name(v){o.name=v},items:o.items}}
 function fDay(){const t=fKey();return F.days[t]||(F.days[t]={m:{},w:[]})}
 /* logged meal: {name, t ISO time checked, items:[[food, unit, amount, cal, P, F, C]]} so history stands on its own */
 function snap(m,t){return {name:m.name,t:t||new Date().toISOString(),items:m.items.map(([sid,q])=>{const s=stOf(sid);return [s[0],s[1],q,...mac(sid,q).map(r1)]})}}
@@ -717,11 +761,11 @@ function afterEdit(m){const d=F.days[fKey()];if(d&&d.m[m.id])d.m[m.id]=snap(m,d.
 const CHEV=`<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>`;
 function itemHtml(mid,[sid,q],i){const s=stOf(sid),[k,p]=mac(sid,q);
   return `<div class="it"><div class="in">${esc(s[0])}<small>${Math.round(k)} cal · ${r1(p)}g P</small></div><input type="number" inputmode="decimal" step="any" min="0" value="${q}" data-fq="${mid}" data-fi="${i}" aria-label="Amount of ${esc(s[0])}"><span class="u">${esc(s[1])}</span><button class="ix" data-fx="${mid}" data-fi="${i}" aria-label="Remove ${esc(s[0])}">×</button></div>`}
-function mealHtml(m,done){const [k,p]=sumItems(m.items),open=fOpen.has(m.id);
-  return `<div class="meal ${done?"done":""} ${open?"open":""}"><div class="mh" data-mh="${m.id}"><input type="checkbox" data-mchk="${m.id}" ${done?"checked":""} aria-label="Ate ${esc(m.name)}"><div class="mn"><span>${esc(m.name)}</span><small>${Math.round(k)} cal · ${Math.round(p)}g protein</small></div>${CHEV}</div>
+function mealHtml(m,done,extra){const [k,p]=sumItems(m.items),open=fOpen.has(m.id);
+  return `<div class="meal ${done?"done":""} ${open?"open":""}"><div class="mh" data-mh="${m.id}"${extra?` data-mx="${m.id}"`:""}><input type="checkbox" data-mchk="${m.id}" ${done?"checked":""} aria-label="Ate ${esc(m.name)}"><div class="mn"><span>${esc(m.name)}</span><small>${Math.round(k)} cal · ${Math.round(p)}g protein${extra?" · this day only, hold to delete":""}</small></div>${CHEV}</div>
   ${open?`<div class="mb">${m.items.map((it,i)=>itemHtml(m.id,it,i)).join("")||`<p class="small" style="margin:0">Nothing in this meal yet.</p>`}
     <div class="mrow"><button class="btn" data-fpick="${m.id}">+ Add food</button></div>
-    <div class="mrow"><input data-mname="${m.id}" value="${esc(m.name)}" maxlength="40" aria-label="Meal name"><button class="btn" data-mdel="${m.id}">Delete meal</button></div></div>`:""}</div>`}
+    <div class="mrow"><input data-mname="${m.id}" value="${esc(m.name)}" maxlength="40" aria-label="Meal name">${extra?"":`<button class="btn" data-mdel="${m.id}">Delete meal</button>`}</div></div>`:""}</div>`}
 function ringSvg(n,t){const R=27,C=2*Math.PI*R,seg=C/t,gap=t>1?3:0,hit=n>=t;let s="";
   for(let i=0;i<t;i++)s+=`<circle cx="36" cy="36" r="${R}" fill="none" stroke="${i<n?(hit?"var(--go)":"var(--accent)"):"var(--line)"}" stroke-width="8" stroke-dasharray="${(seg-gap).toFixed(2)} ${(C-seg+gap).toFixed(2)}" transform="rotate(${(-90+i*360/t).toFixed(2)} 36 36)"/>`;
   return `<svg viewBox="0 0 72 72" role="img" aria-label="${n} of ${t} bottles">${s}<text x="36" y="41" text-anchor="middle">${n}/${t}</text></svg><small>+500 ml</small>`}
@@ -734,7 +778,7 @@ function fTotals(){const dd=F.days[fKey()]||{m:{},w:[]},sum=[0,0,0,0],T=F.tgt;
 function fRender(){fDayKey=today();const vk=fKey(),dd=F.days[vk]||{m:{},w:[]},box=$("#fmeals"),top=box.scrollTop;
   $("#fnext").hidden=vk===fDayKey;$("#fdate").classList.toggle("past",vk!==fDayKey);
   $("#fdate").textContent=toDate(vk).toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
-  box.innerHTML=F.meals.map(m=>mealHtml(m,!!dd.m[m.id])).join("")+`<button class="fadd" data-fnew>+ Add meal</button>`;box.scrollTop=top;fTotals()}
+  box.innerHTML=F.meals.map(b=>mealView(b.id)).map(m=>mealHtml(m,!!dd.m[m.id],false)).join("")+(dd.x||[]).map(m=>mealHtml(m,!!dd.m[m.id],true)).join("")+`<button class="fadd" data-fnew>+ Add meal</button>`;box.scrollTop=top;fTotals()}
 
 function fSheet(h){$("#fsbody").innerHTML=h;$("#fsheet").hidden=false}
 function fSheetClose(){$("#fsheet").hidden=true}
@@ -762,29 +806,36 @@ $("#fring").addEventListener("pointerdown",()=>{wLong=false;clearTimeout(wLP);wL
 ["pointerup","pointerleave","pointercancel"].forEach(ev=>$("#fring").addEventListener(ev,()=>clearTimeout(wLP)));
 $("#fring").addEventListener("contextmenu",e=>e.preventDefault());
 
+/* one-day meals: long-press the header to delete */
+let mLP=null,mLong=false;
+$("#food").addEventListener("pointerdown",e=>{const h=e.target.closest("[data-mx]");if(!h||e.target.matches("input"))return;mLong=false;clearTimeout(mLP);
+  mLP=setTimeout(()=>{mLong=true;const id=h.dataset.mx,d=fDay(),m=(d.x||[]).find(x=>x.id===id);if(!m)return;try{navigator.vibrate?.(30)}catch{}
+    if(confirm(`Delete ${m.name}?`)){d.x=d.x.filter(x=>x!==m);delete d.m[id];fOpen.delete(id);fStore();fRender()}},550)});
+["pointerup","pointerleave","pointercancel","pointermove"].forEach(ev=>$("#food").addEventListener(ev,e=>{if(ev!=="pointermove"||Math.abs(e.movementX)+Math.abs(e.movementY)>4)clearTimeout(mLP)}));
+$("#fmeals").addEventListener("contextmenu",e=>{if(e.target.closest("[data-mx]"))e.preventDefault()});
 $("#food").addEventListener("click",e=>{const t=e.target;
   if(t.closest("#fring")){if(wLong){wLong=false;return}water(1);return}
   if(t.closest("[data-fprev]")){fShift(-1);return}
   if(t.closest("[data-fnext]")){fShift(1);return}
-  if(t.matches("[data-mchk]")){const id=t.dataset.mchk,m=mealOf(id),d=fDay();if(t.checked)d.m[id]=snap(m);else delete d.m[id];fStore();fRender();return}
-  const fx=t.closest("[data-fx]");if(fx){const m=mealOf(fx.dataset.fx);m.items.splice(+fx.dataset.fi,1);afterEdit(m);return}
+  if(t.matches("[data-mchk]")){const id=t.dataset.mchk,m=mealView(id),d=fDay();if(t.checked)d.m[id]=snap(m);else delete d.m[id];fStore();fRender();return}
+  const fx=t.closest("[data-fx]");if(fx){const m=mealEdit(fx.dataset.fx);m.items.splice(+fx.dataset.fi,1);afterEdit(m);return}
   const fp=t.closest("[data-fpick]");if(fp){openPicker(fp.dataset.fpick);return}
-  if(t.closest("[data-fnew]")){const id="m"+Date.now().toString(36);F.meals.push({id,name:"New meal",items:[]});fOpen.add(id);fStore();fRender();const inp=document.querySelector(`[data-mname="${id}"]`);inp?.focus();inp?.select();return}
+  if(t.closest("[data-fnew]")){const id="x"+Date.now().toString(36),d=fDay();(d.x=d.x||[]).push({id,name:"New meal",items:[]});fOpen.add(id);fStore();fRender();const inp=document.querySelector(`[data-mname="${id}"]`);inp?.focus();inp?.select();return}
   const md=t.closest("[data-mdel]");if(md){const m=mealOf(md.dataset.mdel);if(confirm(`Delete ${m.name}? Past days keep their log.`)){F.meals=F.meals.filter(x=>x!==m);fOpen.delete(m.id);fStore();fRender()}return}
   if(t.closest("[data-ftgt]")){tgtForm();return}
   if(t.id==="fsheet"||t.closest("[data-fclose]")){fSheetClose();return}
-  const fa=t.closest("[data-fadd]");if(fa){const m=mealOf(fPickMid);if(m){m.items.push([fa.dataset.fadd,1]);fOpen.add(m.id);afterEdit(m)}fSheetClose();return}
+  const fa=t.closest("[data-fadd]");if(fa){const m=mealEdit(fPickMid);if(m){m.items.push([fa.dataset.fadd,1]);fOpen.add(m.id);afterEdit(m)}fSheetClose();return}
   if(t.closest("[data-fnewfood]")){newFoodForm();return}
   if(t.closest("[data-fsavefood]")){const v=id=>parseFloat($(id).value),name=$("#nf-name").value.trim(),unit=$("#nf-unit").value.trim()||"serving",nums=["#nf-k","#nf-p","#nf-f","#nf-c"].map(v),g=v("#nf-g");
     if(!name||nums.some(x=>!(x>=0))){$("#nf-msg").textContent="Fill in the name and all four numbers (0 is fine).";return}
-    const sid="u"+Date.now().toString(36);F.staples[sid]=[name,unit,...nums,g>0?g:0];const m=mealOf(fPickMid);if(m){m.items.push([sid,1]);fOpen.add(m.id);afterEdit(m)}else fStore();fSheetClose();return}
+    const sid="u"+Date.now().toString(36);F.staples[sid]=[name,unit,...nums,g>0?g:0];const m=mealEdit(fPickMid);if(m){m.items.push([sid,1]);fOpen.add(m.id);afterEdit(m)}else fStore();fSheetClose();return}
   if(t.closest("[data-ftsave]")){const g=id=>parseFloat($(id).value);const T={kcal:g("#tg-kcal"),p:g("#tg-p"),f:g("#tg-f"),c:g("#tg-c"),w:Math.round(g("#tg-w"))};
     for(const k in T)if(T[k]>=0&&!(k==="w"&&T[k]<1))F.tgt[k]=T[k];fStore();fTotals();fSheetClose();return}
   /* meal header: tap to open, tap again to close; the checkbox logs it */
-  const mh=t.closest("[data-mh]");if(mh){const id=mh.dataset.mh;fOpen.has(id)?fOpen.delete(id):fOpen.add(id);fRender()}});
+  const mh=t.closest("[data-mh]");if(mh){if(mLong){mLong=false;return}const id=mh.dataset.mh;fOpen.has(id)?fOpen.delete(id):fOpen.add(id);fRender()}});
 $("#food").addEventListener("change",e=>{const t=e.target;
-  if(t.dataset.fq){const m=mealOf(t.dataset.fq),q=parseFloat(t.value);if(m&&q>=0){m.items[+t.dataset.fi][1]=q;afterEdit(m)}else fRender();return}
-  if(t.dataset.mname){const m=mealOf(t.dataset.mname),n=t.value.trim();if(m&&n){m.name=n;afterEdit(m)}}});
+  if(t.dataset.fq){const m=mealEdit(t.dataset.fq),q=parseFloat(t.value);if(m&&q>=0){m.items[+t.dataset.fi][1]=q;afterEdit(m)}else fRender();return}
+  if(t.dataset.mname){const m=mealEdit(t.dataset.mname),n=t.value.trim();if(m&&n){m.name=n;afterEdit(m)}}});
 $("#food").addEventListener("input",e=>{if(e.target.id==="fsearch")fPickList(e.target.value)});
 $("#food").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.matches("[data-fq],[data-mname]")){e.preventDefault();e.target.blur()}if(e.key==="Escape")fSheetClose()});
 
